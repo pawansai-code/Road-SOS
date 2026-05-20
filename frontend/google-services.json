@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "550254862255",
+    "project_id": "road-sos-60736",
+    "storage_bucket": "road-sos-60736.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:550254862255:android:315062d621cd874714195a",
+        "android_client_info": {
+          "package_name": "com.roadsos.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAJXrn3HuwH3sKnzY4cxEOUcW4SPeftQX4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
