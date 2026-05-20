@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, TextInput, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, Platform, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { triggerSOS, cancelSOS } from '../store/slices/sosSlice';
@@ -9,11 +9,120 @@ export default function HomeScreen() {
   const dispatch = useAppDispatch();
   const { isEmergencyActive, lastUpdated } = useAppSelector((state) => state.sos);
 
+  // States for countdown
+  const [countdown, setCountdown] = React.useState<number | null>(null);
+  const timerRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  // Animated scale for high-end SOS pulsing effect
+  const pulseScale = React.useRef(new Animated.Value(1)).current;
+
+  // States and refs for animated drawer sidebar
+  const [isSidebarVisible, setIsSidebarVisible] = React.useState(false);
+  const sidebarTranslateX = React.useRef(new Animated.Value(-280)).current;
+  const backdropOpacity = React.useRef(new Animated.Value(0)).current;
+
+  const toggleSidebar = (open: boolean) => {
+    if (open) {
+      setIsSidebarVisible(true);
+      Animated.parallel([
+        Animated.timing(sidebarTranslateX, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(backdropOpacity, {
+          toValue: 0.6,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(sidebarTranslateX, {
+          toValue: -280,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+        Animated.timing(backdropOpacity, {
+          toValue: 0,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setIsSidebarVisible(false);
+      });
+    }
+  };
+
+  React.useEffect(() => {
+    let animation: Animated.CompositeAnimation | null = null;
+    
+    if (isEmergencyActive || countdown !== null) {
+      // Pulse slightly faster during countdown to convey visual urgency
+      const pulseDuration = countdown !== null ? 500 : 800;
+      animation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseScale, {
+            toValue: 1.08,
+            duration: pulseDuration,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseScale, {
+            toValue: 1,
+            duration: pulseDuration,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      animation.start();
+    } else {
+      pulseScale.setValue(1);
+    }
+
+    return () => {
+      if (animation) {
+        animation.stop();
+      }
+    };
+  }, [isEmergencyActive, countdown]);
+
+  // Clean up interval timer on unmount
+  React.useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, []);
+
   const handleSOSPress = () => {
     if (isEmergencyActive) {
+      // 1. If already in active emergency, cancel immediately
       dispatch(cancelSOS());
+    } else if (countdown !== null) {
+      // 2. If countdown is ticking, tapping cancels the countdown
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      setCountdown(null);
     } else {
-      dispatch(triggerSOS());
+      // 3. Otherwise, trigger a 5-second countdown first
+      setCountdown(5);
+      let count = 5;
+      timerRef.current = setInterval(() => {
+        count -= 1;
+        if (count <= 0) {
+          if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+          }
+          setCountdown(null);
+          dispatch(triggerSOS());
+        } else {
+          setCountdown(count);
+        }
+      }, 1000);
     }
   };
 
@@ -37,11 +146,32 @@ export default function HomeScreen() {
     </TouchableOpacity>
   );
 
+  // Dynamic values based on active state / countdown ticking state
+  let buttonBg = 'bg-red-600 shadow-red-600/50';
+  let buttonRingOuter = 'bg-red-950/20 border border-red-600/10';
+  let buttonRingMiddle = 'bg-red-900/30';
+  let buttonText = 'SOS';
+  let buttonSubtext = 'Tap in Emergency';
+
+  if (isEmergencyActive) {
+    buttonBg = 'bg-red-800 shadow-red-500/60 border border-red-400';
+    buttonRingOuter = 'bg-red-950/45 border border-red-500/25';
+    buttonRingMiddle = 'bg-red-950/70 border border-red-600/20';
+    buttonText = 'STOP';
+    buttonSubtext = 'Tap to Cancel';
+  } else if (countdown !== null) {
+    buttonBg = 'bg-amber-600 shadow-amber-500/60 border border-amber-400';
+    buttonRingOuter = 'bg-amber-950/40 border border-amber-500/25';
+    buttonRingMiddle = 'bg-amber-950/60 border border-amber-600/20';
+    buttonText = `${countdown}`;
+    buttonSubtext = 'Tap to Cancel';
+  }
+
   return (
     <SafeAreaView className="flex-1 bg-black">
       {/* Header */}
       <View className="flex-row items-center justify-between px-4 py-3 bg-black">
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => toggleSidebar(true)}>
           <MaterialIcons name="menu" size={28} color="#facc15" />
         </TouchableOpacity>
         <Text className="text-white text-xl font-bold tracking-wider">
@@ -54,7 +184,7 @@ export default function HomeScreen() {
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
         
-        {/* Main Banner */}
+        {/* Main Banner (Now positioned directly at the top) */}
         <View className="flex-row mt-4 mb-6">
           <View className="flex-1 bg-gray-900 border border-gray-800 rounded-3xl p-5 mr-3 overflow-hidden justify-center relative">
             <View className="absolute top-0 right-0 w-32 h-32 bg-yellow-400/5 rounded-full -mr-10 -mt-10" />
@@ -82,6 +212,34 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        {/* Massive Pulsing Centered SOS Button (Now repositioned below the 112 Banner) */}
+        <View className="items-center justify-center my-6">
+          <TouchableOpacity 
+            onPress={handleSOSPress}
+            activeOpacity={0.85}
+            className="items-center justify-center"
+          >
+            {/* Outer soft glowing ring with animated pulse */}
+            <Animated.View 
+              style={{ transform: [{ scale: pulseScale }] }}
+              className={`w-52 h-52 rounded-full items-center justify-center ${buttonRingOuter}`}
+            >
+              {/* Middle structural ring */}
+              <View className={`w-44 h-44 rounded-full items-center justify-center ${buttonRingMiddle}`}>
+                {/* Core tactile emergency button */}
+                <View className={`w-36 h-36 rounded-full items-center justify-center shadow-2xl ${buttonBg}`}>
+                  <Text className="text-white font-black text-4xl tracking-widest">
+                    {buttonText}
+                  </Text>
+                  <Text className="text-red-200 text-[9px] font-black tracking-widest mt-2 uppercase">
+                    {buttonSubtext}
+                  </Text>
+                </View>
+              </View>
+            </Animated.View>
+          </TouchableOpacity>
+        </View>
+
         {/* Quick Actions Grid */}
         <View className="flex-row flex-wrap justify-between mb-4">
           <QuickAction icon="person-outline" label="Profile" />
@@ -92,12 +250,7 @@ export default function HomeScreen() {
           <QuickAction icon="phone-in-talk" label="Dial 112" />
           <QuickAction icon="chat-bubble-outline" label="Chat Us" />
           <QuickAction icon="my-location" label="TrackMe" />
-          <TouchableOpacity className="w-[23%] items-center mb-6" onPress={handleSOSPress}>
-            <View className={`w-14 h-14 rounded-full items-center justify-center mb-2 shadow-lg ${isEmergencyActive ? 'bg-red-800 border-2 border-red-500' : 'bg-red-600 shadow-red-500/50'}`}>
-              <Text className="text-white font-black text-sm">{isEmergencyActive ? 'STOP' : 'SOS'}</Text>
-            </View>
-            <Text className="text-gray-400 text-xs text-center font-medium">Emergency</Text>
-          </TouchableOpacity>
+          <QuickAction icon="settings" label="Settings" />
         </View>
 
         {/* Contact Emergency Services */}
@@ -143,6 +296,131 @@ export default function HomeScreen() {
         </View>
 
       </ScrollView>
+
+      {/* Sidebar Overlay */}
+      {isSidebarVisible && (
+        <View className="absolute top-0 left-0 right-0 bottom-0 z-50 flex-row">
+          
+          {/* Translucent Backdrop */}
+          <TouchableOpacity 
+            activeOpacity={1} 
+            onPress={() => toggleSidebar(false)} 
+            style={{ width: '100%', height: '100%', position: 'absolute' }}
+          >
+            <Animated.View 
+              style={{ opacity: backdropOpacity }} 
+              className="w-full h-full bg-black"
+            />
+          </TouchableOpacity>
+
+          {/* Sidebar Panel Drawer */}
+          <Animated.View 
+            style={{ 
+              transform: [{ translateX: sidebarTranslateX }],
+              width: 280,
+              height: '100%',
+              backgroundColor: '#000000', // Bulletproof solid black background to ensure zero transparency
+            }}
+            className="border-r border-gray-900 pt-12 pb-6 flex-col justify-between"
+          >
+            <View>
+              {/* Profile Header Block */}
+              <View className="flex-row items-center px-6 mb-8 mt-6">
+                <View className="w-14 h-14 rounded-full bg-yellow-400 items-center justify-center shadow-lg shadow-yellow-400/20 mr-4">
+                  <Text className="text-black text-2xl font-black">A</Text>
+                </View>
+                <View>
+                  <Text className="text-white font-extrabold text-base tracking-wide">Allen Jinto</Text>
+                  <Text className="text-gray-400 font-semibold text-xs mt-1">+91 9445401181</Text>
+                </View>
+              </View>
+
+              {/* Navigation Options list */}
+              <View className="px-3">
+                
+                {/* Home (Selected Option) */}
+                <TouchableOpacity 
+                  activeOpacity={0.8}
+                  className="flex-row items-center py-3.5 px-4 bg-yellow-400/10 border-l-4 border-yellow-400 rounded-r-2xl mb-1.5"
+                >
+                  <MaterialIcons name="home" size={24} color="#facc15" />
+                  <Text className="text-yellow-400 font-extrabold text-sm ml-4">Home</Text>
+                </TouchableOpacity>
+
+                {/* Profile */}
+                <TouchableOpacity 
+                  activeOpacity={0.7}
+                  className="flex-row items-center py-3.5 px-4 rounded-2xl mb-1.5 active:bg-gray-900"
+                >
+                  <MaterialIcons name="person" size={24} color="#9ca3af" />
+                  <Text className="text-gray-300 font-bold text-sm ml-4">Profile</Text>
+                </TouchableOpacity>
+
+                {/* E-Contact */}
+                <TouchableOpacity 
+                  activeOpacity={0.7}
+                  className="flex-row items-center py-3.5 px-4 rounded-2xl mb-1.5 active:bg-gray-900"
+                >
+                  <MaterialIcons name="contact-phone" size={24} color="#9ca3af" />
+                  <Text className="text-gray-300 font-bold text-sm ml-4">E-Contact</Text>
+                </TouchableOpacity>
+
+                {/* SOS History */}
+                <TouchableOpacity 
+                  activeOpacity={0.7}
+                  className="flex-row items-center py-3.5 px-4 rounded-2xl mb-1.5 active:bg-gray-900"
+                >
+                  <MaterialIcons name="history" size={24} color="#9ca3af" />
+                  <Text className="text-gray-300 font-bold text-sm ml-4">SOS History</Text>
+                </TouchableOpacity>
+
+                {/* Settings */}
+                <TouchableOpacity 
+                  activeOpacity={0.7}
+                  className="flex-row items-center py-3.5 px-4 rounded-2xl mb-1.5 active:bg-gray-900"
+                >
+                  <MaterialIcons name="settings" size={24} color="#9ca3af" />
+                  <Text className="text-gray-300 font-bold text-sm ml-4">Settings</Text>
+                </TouchableOpacity>
+
+                {/* App Info */}
+                <TouchableOpacity 
+                  activeOpacity={0.7}
+                  className="flex-row items-center py-3.5 px-4 rounded-2xl mb-1.5 active:bg-gray-900"
+                >
+                  <MaterialIcons name="info-outline" size={24} color="#9ca3af" />
+                  <Text className="text-gray-300 font-bold text-sm ml-4">App Info</Text>
+                </TouchableOpacity>
+
+                {/* Top Questions */}
+                <TouchableOpacity 
+                  activeOpacity={0.7}
+                  className="flex-row items-center py-3.5 px-4 rounded-2xl mb-1.5 active:bg-gray-900"
+                >
+                  <MaterialIcons name="help-outline" size={24} color="#9ca3af" />
+                  <Text className="text-gray-300 font-bold text-sm ml-4">Top Questions</Text>
+                </TouchableOpacity>
+
+                {/* Logout */}
+                <TouchableOpacity 
+                  activeOpacity={0.7}
+                  className="flex-row items-center py-3.5 px-4 rounded-2xl mb-1.5 active:bg-red-950/20 mt-4"
+                >
+                  <MaterialIcons name="logout" size={24} color="#f87171" />
+                  <Text className="text-red-400 font-extrabold text-sm ml-4">Logout</Text>
+                </TouchableOpacity>
+
+              </View>
+            </View>
+
+            {/* Version Footer */}
+            <View className="px-6">
+              <Text className="text-gray-600 font-bold text-xs">Version 6.1.0</Text>
+            </View>
+
+          </Animated.View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
