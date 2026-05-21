@@ -5,12 +5,20 @@ import SplashScreen from '../screens/SplashScreen';
 import HomeScreen from '../screens/HomeScreen';
 import LoginScreen from '../screens/LoginScreen';
 import SignUpScreen from '../screens/SignUpScreen';
+import AboutScreen from '../screens/AboutScreen';
+import HelpScreen from '../screens/HelpScreen';
+import ProfileScreen from '../screens/ProfileScreen';
+import SuccessScreen from '../screens/SuccessScreen';
 
 export type RootStackParamList = {
   Splash: undefined;
   Login: undefined;
   SignUp: undefined;
   Home: undefined;
+  About: undefined;
+  Help: undefined;
+  Profile: undefined;
+  Success: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -21,7 +29,8 @@ export default function AppNavigator() {
       <Stack.Navigator 
         screenOptions={{ 
           headerShown: false,
-          animation: 'fade',
+          animation: 'slide_from_right',
+          gestureEnabled: true,
         }}
         initialRouteName="Splash"
       >
@@ -29,6 +38,10 @@ export default function AppNavigator() {
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="SignUp" component={SignUpScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="About" component={AboutScreen} />
+        <Stack.Screen name="Help" component={HelpScreen} />
+        <Stack.Screen name="Profile" component={ProfileScreen} />
+        <Stack.Screen name="Success" component={SuccessScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

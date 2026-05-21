@@ -1,9 +1,11 @@
 import { configureStore } from '@reduxjs/toolkit';
 import sosReducer from './slices/sosSlice';
+import userReducer from './slices/userSlice';
 
 export const store = configureStore({
   reducer: {
     sos: sosReducer,
+    user: userReducer,
   },
   // Adding middleware to ensure non-serializable checks don't slow down dev
   // if you plan to store complex objects (though it's best practice to keep state serializable)

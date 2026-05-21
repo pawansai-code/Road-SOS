@@ -1,5 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, Animated, ActivityIndicator, StatusBar } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  Animated,
+  ActivityIndicator,
+  StatusBar,
+  StyleSheet,
+} from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import auth from '@react-native-firebase/auth';
@@ -17,7 +30,6 @@ export default function LoginScreen({ navigation }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Animated values for staggered premium entrance
   const headerOpacity = React.useRef(new Animated.Value(0)).current;
   const headerTranslateY = React.useRef(new Animated.Value(20)).current;
   const formOpacity = React.useRef(new Animated.Value(0)).current;
@@ -25,24 +37,17 @@ export default function LoginScreen({ navigation }: Props) {
   const actionsOpacity = React.useRef(new Animated.Value(0)).current;
   const actionsTranslateY = React.useRef(new Animated.Value(20)).current;
 
-  // Safe Firebase Auth initialization check
   let authInstance: any = null;
   try {
     authInstance = auth();
   } catch (e) {
-    console.warn("Firebase Auth native module not available. Fallback demo authentication enabled.");
+    console.warn('Firebase Auth native module not available. Fallback demo authentication enabled.');
   }
 
-  // Trigger entrance animations when component mounts
   React.useEffect(() => {
     if (Platform.OS !== 'web') {
-      try {
-        configureGoogleSignIn();
-      } catch (e) {
-        console.warn("Google Sign-In configuration skipped:", e);
-      }
+      try { configureGoogleSignIn(); } catch (e) { console.warn('Google Sign-In configuration skipped:', e); }
     }
-
     Animated.stagger(150, [
       Animated.parallel([
         Animated.timing(headerOpacity, { toValue: 1, duration: 500, useNativeDriver: true }),
@@ -61,18 +66,9 @@ export default function LoginScreen({ navigation }: Props) {
 
   const handleLogin = async () => {
     setError(null);
-    
-    // Basic Form Validations
-    if (!email || !password) {
-      setError("Please fill in all fields.");
-      return;
-    }
-
+    if (!email || !password) { setError('Please fill in all fields.'); return; }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError("Please enter a valid email address.");
-      return;
-    }
+    if (!emailRegex.test(email)) { setError('Please enter a valid email address.'); return; }
 
     setIsLoading(true);
     try {
@@ -80,26 +76,18 @@ export default function LoginScreen({ navigation }: Props) {
         await authInstance.signInWithEmailAndPassword(email, password);
         navigation.replace('Home');
       } else {
-        throw new Error("firebase_native_missing");
+        throw new Error('firebase_native_missing');
       }
     } catch (err: any) {
-      console.log("Authentication details:", err);
-      
-      // Graceful fallback bypass if Firebase module fails to load (e.g. testing in Expo Go)
-      if (err.message === "firebase_native_missing" || err.code === "auth/initialization-failed" || !authInstance) {
-        setError("Demo Mode: Authenticated successfully (local bypass).");
-        setTimeout(() => {
-          navigation.replace('Home');
-        }, 1200);
+      if (err.message === 'firebase_native_missing' || !authInstance) {
+        setError('Demo Mode: Authenticated successfully (local bypass).');
+        setTimeout(() => navigation.replace('Home'), 1200);
+      } else if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        setError('Incorrect email or password. Please try again.');
+      } else if (err.code === 'auth/invalid-email') {
+        setError('The email address is badly formatted.');
       } else {
-        // Clearer localized error messages
-        if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-          setError("Incorrect email or password. Please try again.");
-        } else if (err.code === 'auth/invalid-email') {
-          setError("The email address is badly formatted.");
-        } else {
-          setError(err.message || "An authentication error occurred.");
-        }
+        setError(err.message || 'An authentication error occurred.');
       }
     } finally {
       setIsLoading(false);
@@ -108,90 +96,64 @@ export default function LoginScreen({ navigation }: Props) {
 
   const handleGoogleLogin = async () => {
     setError(null);
-    if (Platform.OS === 'web') {
-      setError("Google Sign-In is not supported on web.");
-      return;
-    }
-    
+    if (Platform.OS === 'web') { setError('Google Sign-In is not supported on web.'); return; }
     setIsLoading(true);
     try {
       await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
       const { data } = await GoogleSignin.signIn();
-
       if (data?.idToken) {
         if (authInstance) {
           const googleCredential = auth.GoogleAuthProvider.credential(data.idToken);
           await authInstance.signInWithCredential(googleCredential);
           navigation.replace('Home');
         } else {
-          throw new Error("firebase_native_missing");
+          throw new Error('firebase_native_missing');
         }
       } else {
-        setError("Google Sign-In was canceled.");
+        setError('Google Sign-In was canceled.');
       }
     } catch (err: any) {
-      console.log("Google authentication details:", err);
-      
-      if (err.message === "firebase_native_missing" || !authInstance) {
-        setError("Demo Mode: Google Login succeeded (local bypass).");
-        setTimeout(() => {
-          navigation.replace('Home');
-        }, 1200);
+      if (err.message === 'firebase_native_missing' || !authInstance) {
+        setError('Demo Mode: Google Login succeeded (local bypass).');
+        setTimeout(() => navigation.replace('Home'), 1200);
       } else {
-        setError(err.message || "Google Sign-In failed.");
+        setError(err.message || 'Google Sign-In failed.');
       }
     } finally {
       setIsLoading(false);
     }
   };
 
+  const isDemo = error?.includes('Demo Mode');
+
   return (
-    <SafeAreaView className="flex-1 bg-black">
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000000" />
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1 px-8"
-      >
-        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingVertical: 24 }} showsVerticalScrollIndicator={false}>
-          
-          {/* Header Animating block */}
-          <Animated.View 
-            style={{ opacity: headerOpacity, transform: [{ translateY: headerTranslateY }] }} 
-            className="mb-8 mt-6"
-          >
-            <Text className="text-4xl font-black text-white mb-2">
-              Welcome <Text className="text-yellow-400">Back</Text>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardView}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+
+          {/* Header */}
+          <Animated.View style={[styles.headerBlock, { opacity: headerOpacity, transform: [{ translateY: headerTranslateY }] }]}>
+            <Text style={styles.titleText}>
+              Welcome <Text style={styles.titleAccent}>Back</Text>
             </Text>
-            <Text className="text-gray-400 text-base font-medium">Sign in to continue to ROAD SOS</Text>
+            <Text style={styles.subtitleText}>Sign in to continue to ROAD SOS</Text>
           </Animated.View>
 
-          {/* Validation Feedback Banner */}
+          {/* Error Banner */}
           {error && (
-            <Animated.View className={`mb-6 p-4 rounded-2xl border flex-row items-center ${
-              error.includes("Demo Mode") 
-                ? 'bg-yellow-950/40 border-yellow-800' 
-                : 'bg-red-950/40 border-red-900'
-            }`}>
-              <MaterialIcons 
-                name={error.includes("Demo Mode") ? "info" : "error-outline"} 
-                size={20} 
-                color={error.includes("Demo Mode") ? "#facc15" : "#f87171"} 
-              />
-              <Text className={`font-semibold text-xs ml-2 flex-1 ${
-                error.includes("Demo Mode") ? 'text-yellow-400' : 'text-red-400'
-              }`}>{error}</Text>
-            </Animated.View>
+            <View style={[styles.errorBanner, isDemo ? styles.errorBannerDemo : styles.errorBannerError]}>
+              <MaterialIcons name={isDemo ? 'info' : 'error-outline'} size={20} color={isDemo ? '#facc15' : '#f87171'} />
+              <Text style={[styles.errorBannerText, isDemo ? styles.errorBannerTextDemo : styles.errorBannerTextError]}>{error}</Text>
+            </View>
           )}
 
-          {/* Form Animating block */}
-          <Animated.View 
-            style={{ opacity: formOpacity, transform: [{ translateY: formTranslateY }] }} 
-            className="mb-4"
-          >
-            <View className="mb-4">
-              <Text className="text-yellow-400 mb-2 font-bold tracking-wide text-xs uppercase">Email Address</Text>
+          {/* Form */}
+          <Animated.View style={[{ opacity: formOpacity, transform: [{ translateY: formTranslateY }] }, styles.formBlock]}>
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>Email Address</Text>
               <TextInput
-                className="w-full bg-gray-900 border border-gray-800 rounded-2xl px-4 py-4 text-white font-medium"
+                style={styles.input}
                 placeholder="Enter your email"
                 placeholderTextColor="#4b5563"
                 value={email}
@@ -200,10 +162,10 @@ export default function LoginScreen({ navigation }: Props) {
                 keyboardType="email-address"
               />
             </View>
-            <View className="mb-2">
-              <Text className="text-yellow-400 mb-2 font-bold tracking-wide text-xs uppercase">Password</Text>
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>Password</Text>
               <TextInput
-                className="w-full bg-gray-900 border border-gray-800 rounded-2xl px-4 py-4 text-white font-medium"
+                style={styles.input}
                 placeholder="Enter your password"
                 placeholderTextColor="#4b5563"
                 value={password}
@@ -211,53 +173,114 @@ export default function LoginScreen({ navigation }: Props) {
                 secureTextEntry
               />
             </View>
-            <TouchableOpacity className="items-end mb-6 py-2">
-              <Text className="text-yellow-400 text-xs font-bold">Forgot Password?</Text>
+            <TouchableOpacity style={styles.forgotBtn}>
+              <Text style={styles.forgotText}>Forgot Password?</Text>
             </TouchableOpacity>
           </Animated.View>
 
-          {/* Action Buttons Animating block */}
-          <Animated.View 
-            style={{ opacity: actionsOpacity, transform: [{ translateY: actionsTranslateY }] }}
-          >
-            <TouchableOpacity 
-              className="w-full bg-yellow-400 rounded-2xl py-4 items-center justify-center mb-6 shadow-lg shadow-yellow-400/20 active:opacity-90"
-              onPress={handleLogin}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator size="small" color="#000000" />
-              ) : (
-                <Text className="text-black font-extrabold text-base uppercase tracking-wider">Sign In</Text>
-              )}
+          {/* Actions */}
+          <Animated.View style={{ opacity: actionsOpacity, transform: [{ translateY: actionsTranslateY }] }}>
+            <TouchableOpacity style={styles.primaryBtn} onPress={handleLogin} disabled={isLoading} activeOpacity={0.85}>
+              {isLoading ? <ActivityIndicator size="small" color="#000000" /> : <Text style={styles.primaryBtnText}>Sign In</Text>}
             </TouchableOpacity>
 
-            <View className="flex-row items-center my-4">
-              <View className="flex-1 h-[1px] bg-gray-800" />
-              <Text className="text-gray-500 px-4 font-bold text-xs uppercase tracking-widest">OR</Text>
-              <View className="flex-1 h-[1px] bg-gray-800" />
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>OR</Text>
+              <View style={styles.dividerLine} />
             </View>
 
-            <TouchableOpacity 
-              className="w-full bg-gray-900 border border-gray-800 rounded-2xl py-4 flex-row justify-center items-center mb-8 active:opacity-90"
-              onPress={handleGoogleLogin}
-              disabled={isLoading}
-            >
-              <MaterialIcons name="security" size={18} color="#ffffff" className="mr-2" />
-              <Text className="text-white font-bold text-sm tracking-wide ml-2">Continue with Google</Text>
+            <TouchableOpacity style={styles.googleBtn} onPress={handleGoogleLogin} disabled={isLoading} activeOpacity={0.85}>
+              <MaterialIcons name="security" size={18} color="#ffffff" />
+              <Text style={styles.googleBtnText}>Continue with Google</Text>
             </TouchableOpacity>
 
-            <View className="flex-row justify-center mt-4 mb-4">
-              <Text className="text-gray-400 font-medium">Don't have an account? </Text>
+            <View style={styles.switchRow}>
+              <Text style={styles.switchText}>Don't have an account? </Text>
               <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-                <Text className="text-yellow-400 font-extrabold">Sign Up</Text>
+                <Text style={styles.switchLink}>Sign Up</Text>
               </TouchableOpacity>
             </View>
           </Animated.View>
-          
+
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#000000' },
+  keyboardView: { flex: 1, paddingHorizontal: 32 },
+  scrollContent: { flexGrow: 1, justifyContent: 'center', paddingVertical: 24 },
+  headerBlock: { marginBottom: 32, marginTop: 24 },
+  titleText: { color: '#ffffff', fontSize: 36, fontWeight: '900', marginBottom: 8 },
+  titleAccent: { color: '#facc15' },
+  subtitleText: { color: '#9ca3af', fontSize: 16, fontWeight: '500' },
+
+  // Error
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginBottom: 24,
+  },
+  errorBannerDemo: { backgroundColor: 'rgba(66,32,6,0.4)', borderColor: '#92400e' },
+  errorBannerError: { backgroundColor: 'rgba(127,29,29,0.3)', borderColor: '#7f1d1d' },
+  errorBannerText: { fontSize: 12, fontWeight: '600', flex: 1, marginLeft: 8 },
+  errorBannerTextDemo: { color: '#facc15' },
+  errorBannerTextError: { color: '#f87171' },
+
+  // Form
+  formBlock: { marginBottom: 16 },
+  fieldGroup: { marginBottom: 16 },
+  fieldLabel: { color: '#facc15', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 },
+  input: {
+    width: '100%',
+    backgroundColor: '#111827',
+    borderWidth: 1,
+    borderColor: '#1f2937',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    color: '#ffffff',
+    fontWeight: '500',
+    fontSize: 15,
+  },
+  forgotBtn: { alignItems: 'flex-end', paddingVertical: 8, marginBottom: 8 },
+  forgotText: { color: '#facc15', fontSize: 12, fontWeight: '700' },
+
+  // Actions
+  primaryBtn: {
+    width: '100%',
+    backgroundColor: '#facc15',
+    borderRadius: 16,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  primaryBtnText: { color: '#000000', fontWeight: '800', fontSize: 15, textTransform: 'uppercase', letterSpacing: 1.5 },
+  divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 16 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: '#1f2937' },
+  dividerText: { color: '#6b7280', paddingHorizontal: 16, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 2 },
+  googleBtn: {
+    width: '100%',
+    backgroundColor: '#111827',
+    borderWidth: 1,
+    borderColor: '#1f2937',
+    borderRadius: 16,
+    paddingVertical: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 32,
+    gap: 8,
+  },
+  googleBtnText: { color: '#ffffff', fontWeight: '700', fontSize: 14, marginLeft: 8 },
+  switchRow: { flexDirection: 'row', justifyContent: 'center', marginBottom: 16 },
+  switchText: { color: '#9ca3af', fontWeight: '500' },
+  switchLink: { color: '#facc15', fontWeight: '800' },
+});

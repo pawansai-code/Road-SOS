@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -14,16 +14,26 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.roadsos.app"
+      "bundleIdentifier": "com.roadsos.app",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "ROAD SOS needs access to your photo library to set a profile picture.",
+        "NSCameraUsageDescription": "ROAD SOS needs access to your camera to take a profile photo.",
+        "NSPhotoLibraryAddUsageDescription": "ROAD SOS needs permission to save photos."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#000000"
       },
       "googleServicesFile": "./google-services.json",
       "predictiveBackGestureEnabled": false,
-      "package": "com.roadsos.app"
+      "package": "com.roadsos.app",
+      "permissions": [
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "CAMERA"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -32,6 +42,13 @@
       "@react-native-firebase/app",
       "@react-native-firebase/auth",
       "@react-native-google-signin/google-signin",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "ROAD SOS needs access to your photo library to set a profile picture.",
+          "cameraPermission": "ROAD SOS needs access to your camera to take a profile photo."
+        }
+      ],
       [
         "expo-build-properties",
         {

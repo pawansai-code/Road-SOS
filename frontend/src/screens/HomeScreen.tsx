@@ -1,12 +1,16 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, TextInput, Platform, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, Platform, Animated, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { triggerSOS, cancelSOS } from '../store/slices/sosSlice';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 
 export default function HomeScreen() {
   const dispatch = useAppDispatch();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { isEmergencyActive, lastUpdated } = useAppSelector((state) => state.sos);
 
   // States for countdown
@@ -119,6 +123,7 @@ export default function HomeScreen() {
           }
           setCountdown(null);
           dispatch(triggerSOS());
+          navigation.navigate('Success');
         } else {
           setCountdown(count);
         }
@@ -126,8 +131,8 @@ export default function HomeScreen() {
     }
   };
 
-  const QuickAction = ({ icon, label, isSOS = false }: { icon: any, label: string, isSOS?: boolean }) => (
-    <TouchableOpacity className="w-[23%] items-center mb-6">
+  const QuickAction = ({ icon, label, isSOS = false, onPress }: { icon: any, label: string, isSOS?: boolean, onPress?: () => void }) => (
+    <TouchableOpacity className="w-[23%] items-center mb-6" onPress={onPress}>
       <View className={`w-14 h-14 rounded-full items-center justify-center mb-2 shadow-sm ${isSOS ? 'bg-red-600' : 'bg-gray-900 border border-gray-800'}`}>
         {isSOS ? (
           <Text className="text-white font-black text-sm">SOS</Text>
@@ -169,6 +174,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-black">
+      <StatusBar barStyle="light-content" backgroundColor="#000000" />
       {/* Header */}
       <View className="flex-row items-center justify-between px-4 py-3 bg-black">
         <TouchableOpacity onPress={() => toggleSidebar(true)}>
@@ -242,10 +248,10 @@ export default function HomeScreen() {
 
         {/* Quick Actions Grid */}
         <View className="flex-row flex-wrap justify-between mb-4">
-          <QuickAction icon="person-outline" label="Profile" />
+          <QuickAction icon="person-outline" label="Profile" onPress={() => navigation.navigate('Profile')} />
           <QuickAction icon="history" label="SOS History" />
           <QuickAction icon="notifications-none" label="Notification" />
-          <QuickAction icon="help-outline" label="Top Questions" />
+          <QuickAction icon="help-outline" label="Top Questions" onPress={() => navigation.navigate('Help')} />
           
           <QuickAction icon="phone-in-talk" label="Dial 112" />
           <QuickAction icon="chat-bubble-outline" label="Chat Us" />
@@ -271,6 +277,7 @@ export default function HomeScreen() {
         <View className="flex-row items-center bg-gray-900 border border-gray-800 rounded-2xl px-4 py-2 mt-2 mb-4">
           <TextInput 
             className="flex-1 text-white h-10"
+            style={{ color: 'white' }}
             placeholder="Briefly describe the situation."
             placeholderTextColor="#6b7280"
           />
@@ -351,6 +358,7 @@ export default function HomeScreen() {
                 <TouchableOpacity 
                   activeOpacity={0.7}
                   className="flex-row items-center py-3.5 px-4 rounded-2xl mb-1.5 active:bg-gray-900"
+                  onPress={() => { toggleSidebar(false); navigation.navigate('Profile'); }}
                 >
                   <MaterialIcons name="person" size={24} color="#9ca3af" />
                   <Text className="text-gray-300 font-bold text-sm ml-4">Profile</Text>
@@ -387,6 +395,7 @@ export default function HomeScreen() {
                 <TouchableOpacity 
                   activeOpacity={0.7}
                   className="flex-row items-center py-3.5 px-4 rounded-2xl mb-1.5 active:bg-gray-900"
+                  onPress={() => { toggleSidebar(false); navigation.navigate('About'); }}
                 >
                   <MaterialIcons name="info-outline" size={24} color="#9ca3af" />
                   <Text className="text-gray-300 font-bold text-sm ml-4">App Info</Text>
@@ -396,6 +405,7 @@ export default function HomeScreen() {
                 <TouchableOpacity 
                   activeOpacity={0.7}
                   className="flex-row items-center py-3.5 px-4 rounded-2xl mb-1.5 active:bg-gray-900"
+                  onPress={() => { toggleSidebar(false); navigation.navigate('Help'); }}
                 >
                   <MaterialIcons name="help-outline" size={24} color="#9ca3af" />
                   <Text className="text-gray-300 font-bold text-sm ml-4">Top Questions</Text>
