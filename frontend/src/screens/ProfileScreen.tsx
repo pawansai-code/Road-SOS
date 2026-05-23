@@ -21,6 +21,7 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { updateProfile, clearProfile, fetchProfile, UserProfile } from '../store/slices/userSlice';
+import { fetchContacts, addContact, deleteContact } from '../store/slices/contactsSlice';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Profile'>;
@@ -31,6 +32,7 @@ const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
 export default function ProfileScreen({ navigation }: Props) {
   const dispatch = useAppDispatch();
   const { profile, isLoading, error } = useAppSelector((state) => state.user);
+  const { contacts, loading: contactsLoading } = useAppSelector((state) => state.contacts);
 
   const [formData, setFormData] = useState<UserProfile>({
     full_name: '',
@@ -39,6 +41,7 @@ export default function ProfileScreen({ navigation }: Props) {
     medical_notes: '',
     profile_image: '',
   });
+  const [newContact, setNewContact] = useState({ contact_name: '', relationship: '', phone_number: '' });
   const [showBloodPicker, setShowBloodPicker] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [isImageModalVisible, setIsImageModalVisible] = useState(false);
@@ -53,6 +56,7 @@ export default function ProfileScreen({ navigation }: Props) {
   // Fetch profile on initial load
   useEffect(() => {
     dispatch(fetchProfile());
+    dispatch(fetchContacts());
   }, [dispatch]);
 
   const handleChange = (field: keyof UserProfile, value: string) => {
@@ -112,6 +116,19 @@ export default function ProfileScreen({ navigation }: Props) {
     if (!result.canceled && result.assets[0]?.uri) {
       handleChange('profile_image', result.assets[0].uri);
     }
+  };
+
+  const handleAddContact = () => {
+    if (!newContact.contact_name.trim() || !newContact.relationship.trim() || !newContact.phone_number.trim()) {
+      Alert.alert('Validation Error', 'All fields are required for a new contact.');
+      return;
+    }
+    dispatch(addContact(newContact))
+      .unwrap()
+      .then(() => {
+        setNewContact({ contact_name: '', relationship: '', phone_number: '' });
+      })
+      .catch((err: string) => Alert.alert('Error', err));
   };
 
   // ─── CRUD Operations ───────────────────────────────────────────────────────
@@ -368,6 +385,60 @@ export default function ProfileScreen({ navigation }: Props) {
           <Text style={[styles.discardBtnText, !isDirty && styles.discardBtnTextDisabled]}>Discard Changes</Text>
         </TouchableOpacity>
 
+        {/* Emergency Contacts Section */}
+        <View style={[styles.card, { marginTop: 24 }]}>
+          <Text style={[styles.fieldLabel, { fontSize: 13, color: '#facc15', marginBottom: 16 }]}>Emergency Contacts ({contacts.length}/5)</Text>
+          
+          {contacts.map((contact) => (
+            <View key={contact.id} style={styles.contactItem}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.contactName}>{contact.contact_name} <Text style={styles.contactRel}>• {contact.relationship}</Text></Text>
+                <Text style={styles.contactPhone}>{contact.phone_number}</Text>
+              </View>
+              <TouchableOpacity onPress={() => dispatch(deleteContact(contact.id))} style={styles.deleteContactBtn}>
+                <MaterialIcons name="delete-outline" size={22} color="#ef4444" />
+              </TouchableOpacity>
+            </View>
+          ))}
+
+          {contacts.length < 5 && (
+            <View style={styles.addContactForm}>
+              <TextInput
+                style={[styles.input, styles.contactInput]}
+                placeholder="Name"
+                placeholderTextColor="#4b5563"
+                value={newContact.contact_name}
+                onChangeText={(t) => setNewContact({ ...newContact, contact_name: t })}
+              />
+              <TextInput
+                style={[styles.input, styles.contactInput]}
+                placeholder="Relationship"
+                placeholderTextColor="#4b5563"
+                value={newContact.relationship}
+                onChangeText={(t) => setNewContact({ ...newContact, relationship: t })}
+              />
+              <TextInput
+                style={[styles.input, styles.contactInput]}
+                placeholder="Phone Number"
+                placeholderTextColor="#4b5563"
+                keyboardType="phone-pad"
+                value={newContact.phone_number}
+                onChangeText={(t) => setNewContact({ ...newContact, phone_number: t })}
+              />
+              <TouchableOpacity style={styles.addContactBtn} onPress={handleAddContact} disabled={contactsLoading}>
+                {contactsLoading ? (
+                  <ActivityIndicator size="small" color="#000000" />
+                ) : (
+                  <>
+                    <MaterialIcons name="add" size={20} color="#000000" />
+                    <Text style={styles.addContactBtnText}>Add Contact</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+
       </ScrollView>
 
       {/* Full Image Viewer Modal */}
@@ -584,4 +655,46 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.2)',
     borderRadius: 30,
   },
+
+  // Contacts
+  contactItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#000000',
+    borderWidth: 1,
+    borderColor: '#1f2937',
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 10,
+  },
+  contactName: { color: '#ffffff', fontWeight: '700', fontSize: 15 },
+  contactRel: { color: '#9ca3af', fontWeight: '500', fontSize: 13 },
+  contactPhone: { color: '#6b7280', fontSize: 13, marginTop: 4 },
+  deleteContactBtn: { padding: 8 },
+  addContactForm: {
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 14,
+    padding: 12,
+    marginTop: 8,
+    gap: 8,
+  },
+  contactInput: {
+    backgroundColor: '#000000',
+    borderWidth: 1,
+    borderColor: '#1f2937',
+    borderRadius: 10,
+    marginLeft: 0,
+    paddingHorizontal: 12,
+  },
+  addContactBtn: {
+    backgroundColor: '#facc15',
+    borderRadius: 10,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 4,
+  },
+  addContactBtnText: { color: '#000000', fontWeight: '700', fontSize: 14 },
 });

@@ -1,9 +1,10 @@
 // @ts-nocheck
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, TextInput, Platform, Animated, StatusBar, Image } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, Platform, Animated, StatusBar, Image, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { triggerSOS, cancelSOS } from '../store/slices/sosSlice';
+import { triggerSOS, cancelSOS, logSOSEventToBackend } from '../store/slices/sosSlice';
+import { fetchContacts } from '../store/slices/contactsSlice';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -14,7 +15,12 @@ export default function HomeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { isEmergencyActive, lastUpdated } = useAppSelector((state) => state.sos);
   const { profile } = useAppSelector((state) => state.user);
+  const { contacts } = useAppSelector((state) => state.contacts);
   const initial = profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : '?';
+
+  React.useEffect(() => {
+    dispatch(fetchContacts());
+  }, [dispatch]);
 
   // States for countdown
   const [countdown, setCountdown] = React.useState<number | null>(null);
@@ -147,8 +153,20 @@ export default function HomeScreen() {
     </TouchableOpacity>
   );
 
-  const EmergencyService = ({ icon, label }: { icon: any, label: string }) => (
-    <TouchableOpacity className="w-[23%] bg-gray-900 border border-gray-800 rounded-2xl items-center justify-center p-3 mb-4 shadow-sm">
+  const handleEmergencyCall = (serviceName: string, phoneNumber: string) => {
+    // Log to local history state
+    dispatch(triggerSOS(serviceName));
+    // Sync to backend DB
+    dispatch(logSOSEventToBackend(serviceName));
+    // Route to actual nearest service or dummy number for MVP
+    Linking.openURL(`tel:${phoneNumber}`).catch(err => console.log('Error opening dialer:', err));
+  };
+
+  const EmergencyService = ({ icon, label, phoneNumber }: { icon: any, label: string, phoneNumber: string }) => (
+    <TouchableOpacity 
+      className="w-[23%] bg-gray-900 border border-gray-800 rounded-2xl items-center justify-center p-3 mb-4 shadow-sm"
+      onPress={() => handleEmergencyCall(label, phoneNumber)}
+    >
       <MaterialIcons name={icon} size={28} color="#facc15" />
       <Text className="text-white font-bold text-[10px] mt-2 text-center" numberOfLines={1}>{label}</Text>
     </TouchableOpacity>
@@ -252,28 +270,43 @@ export default function HomeScreen() {
         {/* Quick Actions Grid */}
         <View className="flex-row flex-wrap justify-between mb-4">
           <QuickAction icon="person-outline" label="Profile" onPress={() => navigation.navigate('Profile')} />
-          <QuickAction icon="history" label="SOS History" />
-          <QuickAction icon="notifications-none" label="Notification" />
-          <QuickAction icon="help-outline" label="Top Questions" onPress={() => navigation.navigate('Help')} />
-          
           <QuickAction icon="phone-in-talk" label="Dial 112" />
           <QuickAction icon="chat-bubble-outline" label="Chat Us" />
           <QuickAction icon="my-location" label="TrackMe" />
-          <View style={{ width: '23%' }} /> {/* Placeholder to maintain grid spacing */}
         </View>
 
+
         {/* Contact Emergency Services */}
-        <Text className="text-white font-bold text-lg mb-4">Contact Emergency Services</Text>
+        <Text className="text-white font-bold text-lg mb-4">Emergency Services</Text>
         <View className="flex-row flex-wrap justify-between mb-4">
-          <EmergencyService icon="local-police" label="POLICE" />
-          <EmergencyService icon="local-fire-department" label="FIRE" />
-          <EmergencyService icon="local-hospital" label="MEDICAL" />
-          <EmergencyService icon="storm" label="DISASTER" />
+          <EmergencyService icon="local-police" label="POLICE" phoneNumber="9445401181" />
+          <EmergencyService icon="local-fire-department" label="FIRE" phoneNumber="8124762504" />
+          <EmergencyService icon="local-hospital" label="MEDICAL" phoneNumber="8838343939" />
+          <EmergencyService icon="storm" label="DISASTER" phoneNumber="9043091519" />
           
-          <EmergencyService icon="woman" label="WOMAN" />
-          <EmergencyService icon="child-care" label="CHILD" />
-          <EmergencyService icon="elderly" label="ELDERLY" />
-          <EmergencyService icon="train" label="RAILWAY" />
+          <EmergencyService icon="woman" label="WOMAN" phoneNumber="9080269331" />
+          <EmergencyService icon="child-care" label="CHILD" phoneNumber="9677699624" />
+          <EmergencyService icon="elderly" label="ELDERLY" phoneNumber="1111111111" />
+          <EmergencyService icon="train" label="RAILWAY" phoneNumber="9360067772" />
+        </View>
+
+        {/* Emergency Contacts */}
+        <Text className="text-white font-bold text-lg mb-4">Emergency Contacts</Text>
+        <View className="flex-row flex-wrap justify-between mb-4">
+          {contacts.map((contact) => (
+            <QuickAction 
+              key={contact.id} 
+              icon="person" 
+              label={contact.contact_name} 
+              onPress={() => Linking.openURL(`tel:${contact.phone_number}`)} 
+            />
+          ))}
+          {contacts.length === 0 && (
+             <Text className="text-gray-400 text-sm italic ml-2">No contacts saved. Add them in Profile.</Text>
+          )}
+          {contacts.length > 0 && Array.from({ length: 4 - (contacts.length % 4 === 0 ? 4 : contacts.length % 4) }).map((_, i) => (
+             <View key={`placeholder-${i}`} style={{ width: '23%' }} />
+          ))}
         </View>
 
         {/* Text Input */}
@@ -388,6 +421,7 @@ export default function HomeScreen() {
                 <TouchableOpacity 
                   activeOpacity={0.7}
                   className="flex-row items-center py-3.5 px-4 rounded-2xl mb-1.5 active:bg-gray-900"
+                  onPress={() => { toggleSidebar(false); navigation.navigate('History'); }}
                 >
                   <MaterialIcons name="history" size={24} color="#9ca3af" />
                   <Text className="text-gray-300 font-bold text-sm ml-4">SOS History</Text>

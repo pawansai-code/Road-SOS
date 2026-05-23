@@ -1,0 +1,51 @@
+hey chat as im doing ROAD sos project right 
+so in that the user profile fearure got completed where the frontend backend and db connections are given and working good 
+tech staks used :
+reactnative 
+django rest framework 
+postgre SQL (pgadmin4)
+
+
+so now there is an feature where the user can call the services such as police ,, ambulance, fire station ,disaster, woman(this uses the tamilnadu new woman safety patrol launcched by cm vijay), child (respective patrol),, eldery (respective patrol), railway police 
+
+
+here first the person clicks on the specific button then call triggers to respective numbers then it will store in the db with respective fields such as 1. service type 2. service name 
+
+
+
+actually the respective govt services have the same number right for police it has only the 100 in all states 
+
+
+
+here i planned a workflow that 
+
+    my app has multiple buttons with respective services with seeded numbers ---> saves to db (service type and service number) ---> call (routes to nearest service ---> stores in history 
+
+    is that ok 
+
+
+
+
+
+
+
+
+    here i planned a workflow that 
+
+    my app has multiple emergency services seeded numbers ---> saves to db (service type and service number) ---> call (routes to nearest service ---> stores in history 
+
+    is that ok to implement this as o the frontend part is over just need to link the respective numbers 
+
+
+[ Police ]         → 100
+[ Ambulance ]      → 108
+[ Fire Rescue ]    → 101
+[ Women Safety ]   → 1091
+[ Child Helpline ] → 1098
+[ Railway Police ] → 1512
+[ Disaster Help ]  → 1070
+
+for now this is mmvp and dont link the official numbers ill give you other numbers to link here 
+
+
+so first give m the idea and then ill cconfirm it 

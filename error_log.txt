@@ -1,0 +1,45 @@
+=========================================================
+ROAD SOS - ERROR LOG & TROUBLESHOOTING GUIDE
+=========================================================
+
+1. ERROR: Unable to resolve "react-native-get-random-values"
+---------------------------------------------------------
+- Symptoms: Android Bundling fails with an import resolution error on index.ts / sosSlice.ts.
+- Cause: The code tried to import the `react-native-get-random-values` and `uuid` libraries, but they were not installed in `package.json`.
+- Solution: Remove the unused imports from `src/store/slices/sosSlice.ts` if a simpler unique ID method like `Date.now().toString()` is sufficient. If `uuid` is strictly needed, install the packages by running `npm install uuid react-native-get-random-values`.
+
+
+2. ERROR: Database data exists, but frontend asks for new data (Empty Profile)
+---------------------------------------------------------
+- Symptoms: The backend database (PostgreSQL) has the user's data (e.g., firebase_uid 'dummy_user_123' and name 'Prathiksha'), but the mobile app's Profile screen acts like no data exists and asks for new data.
+- Cause: Network connection failure. The mobile app is trying to fetch data from a hardcoded IP address (e.g., `192.168.43.71`) that no longer matches the computer's actual Wi-Fi IP address, or it's running on an emulator that needs `10.0.2.2`.
+- Solution: Open Windows terminal, type `ipconfig`, find your current IPv4 Address. Update the `API_BASE_URL` in `src/store/slices/userSlice.ts` to match the new IP (e.g., `http://192.168.43.149:8000/api`). If using an Android Emulator, change it to `http://10.0.2.2:8000/api`.
+
+
+3. ERROR: Native Packages / Modules not found or not linking
+---------------------------------------------------------
+- Symptoms: Encountering errors like "Native module cannot be null", "Invariant Violation", or the app crashing entirely when trying to use a newly installed library (like camera, location, or advanced maps).
+- Cause: The app is running inside standard 'Expo Go', which only includes a pre-defined set of native modules. If a newly installed package requires custom native code (Android/iOS modifications), Expo Go cannot run it on the fly.
+- Solution: 
+  a) Ensure you are using an Expo-compatible package.
+  b) If the package has native code dependencies, you must rebuild your custom development client instead of using standard Expo Go. 
+  c) To rebuild: stop the server, run `npx expo prebuild` (if not done already), and run `npx expo run:android` to compile the actual Android APK with the new native code included.
+
+
+
+
+
+
+
+
+INCOMPLETE FEATURE 
+
+1. Why the data isn't saving to the Database:
+The sos_event_logs table in your PostgreSQL database already exists and has some strict rules that weren't in our initial plan:
+
+Foreign Key Requirement: Every log requires an incident_id that links to a table called sos_incidents. Since we didn't provide one, PostgreSQL blocked the save.
+Enum Restriction: The event_type column is an ENUM that only accepts specific values like SOS_CREATED, CALL_TRIGGERED, SMS_SENT, etc. Trying to save "POLICE" or "FIRE" directly causes a database crash.
+How we can fix this:
+
+Option A (Recommended for MVP): Let me change our Django model to create a brand new table (e.g., service_call_logs) that perfectly matches the simple structure we want (just firebase_uid, event_type, and timestamp).
+Option B (Use existing table): If we must use sos_event_logs, we need to first create a dummy "Incident" in the database, use CALL_TRIGGERED as the event_type, and save "POLICE" inside the event_message column.
