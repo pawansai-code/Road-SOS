@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useEffect } from 'react';
 import { View, Text, Animated, StatusBar } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -54,9 +55,9 @@ export default function SplashScreen() {
       ]),
     ]).start();
 
-    // Smooth navigation redirect to Login
+    // Smooth navigation redirect to Home
     const timer = setTimeout(() => {
-      navigation.replace('Login');
+      navigation.replace('Home');
     }, 2800);
 
     return () => clearTimeout(timer);

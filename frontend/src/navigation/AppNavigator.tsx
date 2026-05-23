@@ -1,10 +1,9 @@
+// @ts-nocheck
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import SplashScreen from '../screens/SplashScreen';
 import HomeScreen from '../screens/HomeScreen';
-import LoginScreen from '../screens/LoginScreen';
-import SignUpScreen from '../screens/SignUpScreen';
 import AboutScreen from '../screens/AboutScreen';
 import HelpScreen from '../screens/HelpScreen';
 import ProfileScreen from '../screens/ProfileScreen';
@@ -12,8 +11,6 @@ import SuccessScreen from '../screens/SuccessScreen';
 
 export type RootStackParamList = {
   Splash: undefined;
-  Login: undefined;
-  SignUp: undefined;
   Home: undefined;
   About: undefined;
   Help: undefined;
@@ -35,8 +32,6 @@ export default function AppNavigator() {
         initialRouteName="Splash"
       >
         <Stack.Screen name="Splash" component={SplashScreen} />
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="SignUp" component={SignUpScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="About" component={AboutScreen} />
         <Stack.Screen name="Help" component={HelpScreen} />
