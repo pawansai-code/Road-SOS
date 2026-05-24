@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 
 // Hardcoding for MVP. Ideally imported from a shared config.
-const API_BASE_URL = 'http://192.168.43.71:8000/api';
+const API_BASE_URL = 'http://192.168.43.149:8000/api';
 const DUMMY_UID = 'dummy_user_123';
 
 export const logSOSEventToBackend = createAsyncThunk(

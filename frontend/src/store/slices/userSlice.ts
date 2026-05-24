@@ -3,7 +3,7 @@ import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 // NOTE: This IP must match the computer running your PostgreSQL backend.
 // If using Android Emulator, change this to: 'http://10.0.2.2:8000/api'
 // If using Physical Device, ensure 192.168.43.71 is your exact Wi-Fi IPv4 address.
-const API_BASE_URL = 'http://192.168.43.71:8000/api';
+const API_BASE_URL = 'http://192.168.43.149:8000/api';
 const DUMMY_UID = 'dummy_user_123';
 
 

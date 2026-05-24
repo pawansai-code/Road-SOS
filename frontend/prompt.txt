@@ -93,3 +93,43 @@ Your messaging app should open instantly with the message pre-filled!
 
 fine leave that plan and we'll go with other feature like automation where after click an emrgency contacts it will send the sms with location right 
 so here in case if the person who does'nt opens the map link sent by the injured person the sos should automate send it to the respective emergency contacts without their presence and if the did'nt clicked the map link the sms shou;ld trigger to another emergency contact in 20 seconds same repeats to all the five contacts 
+
+
+
+
+
+
+
+escalation system implementation plan 
+
+
+Implementation Plan: Automated SOS Escalation Workflow
+This plan transitions our SOS workflow from using the Native SMS app to a highly resilient Backend-Driven Automated Escalation system.
+
+This ensures that even if the injured person's phone dies immediately after pressing SOS, the server will continue to alert emergency contacts one by one until someone acknowledges it.
+
+Architectural Overview
+Backend SMS Gateway: We will integrate an SMS provider (like Twilio or Fast2SMS) into Django to send text messages automatically, silently, and without user intervention.
+Custom Tracking Links: Instead of sending a raw Google Maps link, the backend will generate a unique link for each contact (e.g., http://api.roadsos.com/track/INCIDENT_ID/CONTACT_ID).
+Escalation Engine: We will build an asynchronous queue system in Django.
+It texts Contact 1.
+Starts a 20-second background timer.
+If Contact 1 hasn't clicked the link, it texts Contact 2.
+Repeats until all 5 contacts are reached or someone clicks the link.
+Proposed Changes
+1. Backend: Database Models
+SOSIncident Model: Track the active incident (latitude, longitude).
+IncidentEscalation Model: Track which contact is currently being alerted, and whether they have acknowledged the alert (has_acknowledged = Boolean).
+2. Backend: Link Tracking Endpoint
+GET /api/sos/track/<incident_id>/<contact_id>/
+When an emergency contact clicks the link in their SMS, this endpoint is hit.
+It marks has_acknowledged = True in the database.
+It instantly 302 Redirects the contact to the live Google Maps URL of the injured person.
+3. Backend: Escalation Task System
+Since installing Redis and Celery on Windows can be extremely complex for an MVP, we will use a robust, built-in Python approach like threading.Timer or a lightweight database-backed queue (like Huey or django-apscheduler) to handle the 20-second delays natively inside your Django server.
+4. Frontend: Triggering the Automation
+The Home Screen SOS button will send a single POST request to /api/sos/trigger/.
+The frontend no longer opens the Native SMS app. It simply displays a radar/loading screen showing "Alerting Emergency Contacts..." while the backend takes over the entire escalation process.
+Open Questions
+SMS Provider Selection: To send automated texts from the backend, we must use a third-party API. Do you prefer Twilio (Global standard, highly reliable) or Fast2SMS (Optimized for India pricing)? You will need to create a free trial account to get API keys before we can build this.
+Local Testing Limitation: Because your backend is running locally on your laptop (192.168.x.x), the tracking link sent in the SMS will be a local IP address. If the emergency contact is not connected to your exact same Wi-Fi, the link won't open. To test this fully, we will either need to run ngrok to make your laptop public, or deploy the backend to a live server. Does that sound good to you?
