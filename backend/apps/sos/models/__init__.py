@@ -1,0 +1,1 @@
+from .incident_model import Incident
