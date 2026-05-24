@@ -1,10 +1,11 @@
 // @ts-nocheck
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, TextInput, Platform, Animated, StatusBar, Image, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, Platform, Animated, StatusBar, Image, Linking, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Location from 'expo-location';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { triggerSOS, cancelSOS, logSOSEventToBackend } from '../store/slices/sosSlice';
-import { fetchContacts } from '../store/slices/contactsSlice';
+import { fetchContacts, fetchSmsTemplate } from '../store/slices/contactsSlice';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -15,12 +16,61 @@ export default function HomeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { isEmergencyActive, lastUpdated } = useAppSelector((state) => state.sos);
   const { profile } = useAppSelector((state) => state.user);
-  const { contacts } = useAppSelector((state) => state.contacts);
+  const { contacts, smsTemplate } = useAppSelector((state) => state.contacts);
   const initial = profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : '?';
+
+  const [location, setLocation] = React.useState<Location.LocationObject | null>(null);
+  const [locationError, setLocationError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     dispatch(fetchContacts());
+    dispatch(fetchSmsTemplate());
+
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setLocationError('Permission to access location was denied');
+        return;
+      }
+      try {
+        let loc = await Location.getCurrentPositionAsync({});
+        setLocation(loc);
+      } catch (e) {
+        setLocationError('Failed to fetch location');
+      }
+    })();
   }, [dispatch]);
+
+  const handleContactPress = (contact: any) => {
+    Alert.alert(
+      `Contact ${contact.contact_name}`,
+      `Choose an action for your ${contact.relationship}`,
+      [
+        {
+          text: 'Call',
+          onPress: () => Linking.openURL(`tel:${contact.phone_number}`).catch(err => console.log('Error opening dialer:', err)),
+        },
+        {
+          text: 'Send SMS',
+          onPress: () => {
+            let message = smsTemplate || "🚨 EMERGENCY SOS 🚨 I need immediate assistance!";
+            if (location) {
+              message += `\n\nLive Location: https://maps.google.com/?q=${location.coords.latitude},${location.coords.longitude}`;
+            } else {
+              message += `\n\nLive Location: Unknown (Fetching failed or denied)`;
+            }
+            const separator = Platform.OS === 'ios' ? '&' : '?';
+            const url = `sms:${contact.phone_number}${separator}body=${encodeURIComponent(message)}`;
+            Linking.openURL(url).catch(err => console.log('Error opening SMS app:', err));
+          },
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+      ]
+    );
+  };
 
   // States for countdown
   const [countdown, setCountdown] = React.useState<number | null>(null);
@@ -298,7 +348,7 @@ export default function HomeScreen() {
               key={contact.id} 
               icon="person" 
               label={contact.contact_name} 
-              onPress={() => Linking.openURL(`tel:${contact.phone_number}`)} 
+              onPress={() => handleContactPress(contact)} 
             />
           ))}
           {contacts.length === 0 && (
@@ -325,18 +375,22 @@ export default function HomeScreen() {
         {/* Location Banner */}
         <View className="flex-row items-center bg-gray-900 border border-gray-800 rounded-2xl p-4 mb-4">
           <MaterialIcons name="location-on" size={24} color="#ef4444" />
-          <Text className="text-white font-medium ml-2 flex-1">Fetching location...</Text>
+          <Text className="text-white font-medium ml-2 flex-1">
+            {locationError ? 'Location denied' : location ? `${location.coords.latitude.toFixed(4)}, ${location.coords.longitude.toFixed(4)}` : 'Fetching location...'}
+          </Text>
         </View>
 
         {/* Permission Notice */}
-        <View className="flex-row items-center justify-between bg-gray-900/50 p-4 rounded-2xl border border-gray-800">
-          <Text className="text-gray-400 text-xs flex-1 mr-4 leading-5">
-            Location permission is required. Please enable it in Settings
-          </Text>
-          <TouchableOpacity className="bg-white rounded-full px-4 py-2">
-            <Text className="text-black text-xs font-bold">Settings</Text>
-          </TouchableOpacity>
-        </View>
+        {locationError && (
+          <View className="flex-row items-center justify-between bg-gray-900/50 p-4 rounded-2xl border border-gray-800 mb-4">
+            <Text className="text-gray-400 text-xs flex-1 mr-4 leading-5">
+              Location permission is required. Please enable it in Settings
+            </Text>
+            <TouchableOpacity className="bg-white rounded-full px-4 py-2" onPress={() => Linking.openSettings()}>
+              <Text className="text-black text-xs font-bold">Settings</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
       </ScrollView>
 

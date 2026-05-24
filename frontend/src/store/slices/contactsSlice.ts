@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 
-const API_BASE_URL = 'http://192.168.43.149:8000/api';
+const API_BASE_URL = 'http://192.168.43.71:8000/api';
 const DUMMY_UID = 'dummy_user_123';
 
 export interface EmergencyContact {
@@ -13,12 +13,14 @@ export interface EmergencyContact {
 
 interface ContactsState {
   contacts: EmergencyContact[];
+  smsTemplate: string | null;
   loading: boolean;
   error: string | null;
 }
 
 const initialState: ContactsState = {
   contacts: [],
+  smsTemplate: null,
   loading: false,
   error: null,
 };
@@ -83,6 +85,25 @@ export const deleteContact = createAsyncThunk(
   }
 );
 
+export const fetchSmsTemplate = createAsyncThunk(
+  'contacts/fetchSmsTemplate',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/contacts/sms-template/`, {
+        headers: {
+          'X-Firebase-Uid': DUMMY_UID,
+          'Accept': 'application/json',
+        },
+      });
+      if (!response.ok) throw new Error('Failed to fetch SMS template');
+      const data = await response.json();
+      return data.template as string;
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
 const contactsSlice = createSlice({
   name: 'contacts',
   initialState,
@@ -106,6 +127,9 @@ const contactsSlice = createSlice({
       })
       .addCase(deleteContact.fulfilled, (state, action: PayloadAction<string>) => {
         state.contacts = state.contacts.filter(c => c.id !== action.payload);
+      })
+      .addCase(fetchSmsTemplate.fulfilled, (state, action: PayloadAction<string>) => {
+        state.smsTemplate = action.payload;
       });
   },
 });

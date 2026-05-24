@@ -43,3 +43,28 @@ class EmergencyContactDetailView(APIView):
         contact = get_object_or_404(EmergencyContact, pk=pk, user=user)
         contact.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class SMSTemplateView(APIView):
+    def get(self, request):
+        firebase_uid = request.headers.get('X-Firebase-Uid', 'dummy_user_123')
+        user = get_object_or_404(UserProfile, firebase_uid=firebase_uid)
+        
+        # Build SMS Template based on UserProfile data
+        # Later, we can query sos_incidents here to add maps_link
+        
+        name = user.full_name or "A user"
+        phone = user.phone_number or "Unknown"
+        blood_group = user.blood_group or "Unknown"
+        medical_notes = user.medical_notes or "None"
+        
+        message = (
+            "🚨 EMERGENCY SOS 🚨\n"
+            f"I need immediate assistance!\n"
+            f"Name: {name}\n"
+            f"Phone: {phone}\n"
+            f"Blood Group: {blood_group}\n"
+            f"Medical Notes: {medical_notes}\n\n"
+            "Location: Unknown (No active incident tracked yet)"
+        )
+        
+        return Response({"template": message}, status=status.HTTP_200_OK)

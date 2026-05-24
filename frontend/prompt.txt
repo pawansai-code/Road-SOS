@@ -49,3 +49,47 @@ for now this is mmvp and dont link the official numbers ill give you other numbe
 
 
 so first give m the idea and then ill cconfirm it 
+
+
+
+
+
+Walkthrough: Native SMS SOS Integration
+The Native SMS feature is now fully implemented and connected securely between your React Native frontend and Django backend!
+
+What Was Completed
+1. Backend Emergency Template Engine
+Added a new SMSTemplateView endpoint at /api/contacts/sms-template/.
+This API pulls the user's live profile data directly from the USERS table securely using their Firebase-Uid.
+It dynamically generates a clean, readable text template:
+text
+
+🚨 EMERGENCY SOS 🚨
+I need immediate assistance!
+Name: Pawan sai Gopi
+Phone: 9080201820
+Blood Group: B+
+Medical Notes: Sticked to suchi
+Location: Unknown (No active incident tracked yet)
+2. Frontend State Management (contactsSlice.ts)
+Added the fetchSmsTemplate async thunk to Redux.
+The smsTemplate is now automatically fetched and cached in the application state the moment the Home Screen mounts, ensuring it is ready for immediate dispatch during an emergency without waiting for network calls.
+3. Cross-Platform SMS Dispatch (HomeScreen.tsx)
+Updated the "Emergency Contacts" mapping to use the new handleContactPress function instead of directly calling the native dialer.
+The handleContactPress function dynamically adapts the Linking URL scheme based on whether you are using Android or iOS.
+iOS: sms:PHONE_NUMBER&body=ENCODED_MESSAGE
+Android: sms:PHONE_NUMBER?body=ENCODED_MESSAGE
+Tapping on a custom contact (e.g., "Father") now instantly opens the user's default SMS application, pre-filled with the exact message from your backend.
+TIP
+
+Try it out!
+
+Ensure your backend server is running (python manage.py runserver 0.0.0.0:8000).
+On the Expo app, tap one of your custom emergency contacts in the Home screen grid.
+Your messaging app should open instantly with the message pre-filled!
+
+
+
+
+fine leave that plan and we'll go with other feature like automation where after click an emrgency contacts it will send the sms with location right 
+so here in case if the person who does'nt opens the map link sent by the injured person the sos should automate send it to the respective emergency contacts without their presence and if the did'nt clicked the map link the sms shou;ld trigger to another emergency contact in 20 seconds same repeats to all the five contacts 
