@@ -1,0 +1,135 @@
+hey chat as im doing ROAD sos project right 
+so in that the user profile fearure got completed where the frontend backend and db connections are given and working good 
+tech staks used :
+reactnative 
+django rest framework 
+postgre SQL (pgadmin4)
+
+
+so now there is an feature where the user can call the services such as police ,, ambulance, fire station ,disaster, woman(this uses the tamilnadu new woman safety patrol launcched by cm vijay), child (respective patrol),, eldery (respective patrol), railway police 
+
+
+here first the person clicks on the specific button then call triggers to respective numbers then it will store in the db with respective fields such as 1. service type 2. service name 
+
+
+
+actually the respective govt services have the same number right for police it has only the 100 in all states 
+
+
+
+here i planned a workflow that 
+
+    my app has multiple buttons with respective services with seeded numbers ---> saves to db (service type and service number) ---> call (routes to nearest service ---> stores in history 
+
+    is that ok 
+
+
+
+
+
+
+
+
+    here i planned a workflow that 
+
+    my app has multiple emergency services seeded numbers ---> saves to db (service type and service number) ---> call (routes to nearest service ---> stores in history 
+
+    is that ok to implement this as o the frontend part is over just need to link the respective numbers 
+
+
+[ Police ]         → 100
+[ Ambulance ]      → 108
+[ Fire Rescue ]    → 101
+[ Women Safety ]   → 1091
+[ Child Helpline ] → 1098
+[ Railway Police ] → 1512
+[ Disaster Help ]  → 1070
+
+for now this is mmvp and dont link the official numbers ill give you other numbers to link here 
+
+
+so first give m the idea and then ill cconfirm it 
+
+
+
+
+
+Walkthrough: Native SMS SOS Integration
+The Native SMS feature is now fully implemented and connected securely between your React Native frontend and Django backend!
+
+What Was Completed
+1. Backend Emergency Template Engine
+Added a new SMSTemplateView endpoint at /api/contacts/sms-template/.
+This API pulls the user's live profile data directly from the USERS table securely using their Firebase-Uid.
+It dynamically generates a clean, readable text template:
+text
+
+🚨 EMERGENCY SOS 🚨
+I need immediate assistance!
+Name: Pawan sai Gopi
+Phone: 9080201820
+Blood Group: B+
+Medical Notes: Sticked to suchi
+Location: Unknown (No active incident tracked yet)
+2. Frontend State Management (contactsSlice.ts)
+Added the fetchSmsTemplate async thunk to Redux.
+The smsTemplate is now automatically fetched and cached in the application state the moment the Home Screen mounts, ensuring it is ready for immediate dispatch during an emergency without waiting for network calls.
+3. Cross-Platform SMS Dispatch (HomeScreen.tsx)
+Updated the "Emergency Contacts" mapping to use the new handleContactPress function instead of directly calling the native dialer.
+The handleContactPress function dynamically adapts the Linking URL scheme based on whether you are using Android or iOS.
+iOS: sms:PHONE_NUMBER&body=ENCODED_MESSAGE
+Android: sms:PHONE_NUMBER?body=ENCODED_MESSAGE
+Tapping on a custom contact (e.g., "Father") now instantly opens the user's default SMS application, pre-filled with the exact message from your backend.
+TIP
+
+Try it out!
+
+Ensure your backend server is running (python manage.py runserver 0.0.0.0:8000).
+On the Expo app, tap one of your custom emergency contacts in the Home screen grid.
+Your messaging app should open instantly with the message pre-filled!
+
+
+
+
+fine leave that plan and we'll go with other feature like automation where after click an emrgency contacts it will send the sms with location right 
+so here in case if the person who does'nt opens the map link sent by the injured person the sos should automate send it to the respective emergency contacts without their presence and if the did'nt clicked the map link the sms shou;ld trigger to another emergency contact in 20 seconds same repeats to all the five contacts 
+
+
+
+
+
+
+
+escalation system implementation plan 
+
+
+Implementation Plan: Automated SOS Escalation Workflow
+This plan transitions our SOS workflow from using the Native SMS app to a highly resilient Backend-Driven Automated Escalation system.
+
+This ensures that even if the injured person's phone dies immediately after pressing SOS, the server will continue to alert emergency contacts one by one until someone acknowledges it.
+
+Architectural Overview
+Backend SMS Gateway: We will integrate an SMS provider (like Twilio or Fast2SMS) into Django to send text messages automatically, silently, and without user intervention.
+Custom Tracking Links: Instead of sending a raw Google Maps link, the backend will generate a unique link for each contact (e.g., http://api.roadsos.com/track/INCIDENT_ID/CONTACT_ID).
+Escalation Engine: We will build an asynchronous queue system in Django.
+It texts Contact 1.
+Starts a 20-second background timer.
+If Contact 1 hasn't clicked the link, it texts Contact 2.
+Repeats until all 5 contacts are reached or someone clicks the link.
+Proposed Changes
+1. Backend: Database Models
+SOSIncident Model: Track the active incident (latitude, longitude).
+IncidentEscalation Model: Track which contact is currently being alerted, and whether they have acknowledged the alert (has_acknowledged = Boolean).
+2. Backend: Link Tracking Endpoint
+GET /api/sos/track/<incident_id>/<contact_id>/
+When an emergency contact clicks the link in their SMS, this endpoint is hit.
+It marks has_acknowledged = True in the database.
+It instantly 302 Redirects the contact to the live Google Maps URL of the injured person.
+3. Backend: Escalation Task System
+Since installing Redis and Celery on Windows can be extremely complex for an MVP, we will use a robust, built-in Python approach like threading.Timer or a lightweight database-backed queue (like Huey or django-apscheduler) to handle the 20-second delays natively inside your Django server.
+4. Frontend: Triggering the Automation
+The Home Screen SOS button will send a single POST request to /api/sos/trigger/.
+The frontend no longer opens the Native SMS app. It simply displays a radar/loading screen showing "Alerting Emergency Contacts..." while the backend takes over the entire escalation process.
+Open Questions
+SMS Provider Selection: To send automated texts from the backend, we must use a third-party API. Do you prefer Twilio (Global standard, highly reliable) or Fast2SMS (Optimized for India pricing)? You will need to create a free trial account to get API keys before we can build this.
+Local Testing Limitation: Because your backend is running locally on your laptop (192.168.x.x), the tracking link sent in the SMS will be a local IP address. If the emergency contact is not connected to your exact same Wi-Fi, the link won't open. To test this fully, we will either need to run ngrok to make your laptop public, or deploy the backend to a live server. Does that sound good to you?

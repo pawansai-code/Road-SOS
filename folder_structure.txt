@@ -1,0 +1,61 @@
+[Folder Structure]
+Implement the following scalable, industry-standard directory structure within frontend/src/:
+
+src/assets/ - Static files like images, custom fonts, etc.
+src/components/ - Reusable UI components (e.g., buttons, inputs).
+src/constants/ - Configuration, theme variables (colors, typography, spacing).
+src/navigation/ - React Navigation navigators (Stack, Tab, Drawer).
+src/screens/ - Complete UI views/screens.
+src/services/ - External API clients, third-party service logic.
+src/store/ - Global state management setup (e.g., Context API, Zustand, or Redux).
+src/types/ - Global TypeScript types and interfaces.
+src/utils/ - Helper functions and formatters.
+
+
+[Dependencies]
+The following key dependencies and their purpose are used in this project:
+
+# Core Framework
+- expo: The React Native framework for cross-platform app development.
+- react / react-native: The core libraries for building user interfaces.
+
+# Navigation
+- @react-navigation/native: Core navigation library.
+- @react-navigation/native-stack: Stack navigator for screen transitions.
+- react-native-screens & react-native-safe-area-context: Native screen primitives and safe area padding (required by React Navigation).
+
+# Styling
+- nativewind: Allows using Tailwind CSS classes directly in React Native (via the `className` prop).
+- tailwindcss (dev dependency): The Tailwind CSS framework, used alongside NativeWind to generate styles.
+
+
+
+
+
+
+
+
+
+
+
+Step 1: Log in to Expo Run this command and follow the prompts to log in (or create an account if you don't have one):
+
+bash
+npx eas-cli login
+Step 2: Generate the Keystore & SHA-1 Once logged in, run this command to generate your Android credentials:
+
+bash
+npx eas-cli credentials
+It will ask you what platform you want to manage. Use your arrow keys to select android.
+It will ask you which build profile. Select development.
+It will ask if you want to generate a new Keystore. Press Y (Yes).
+Step 3: Copy the SHA-1 Once the Keystore is generated, the terminal will print out a bunch of details, including your SHA-1 Fingerprint.
+
+Copy that SHA-1 fingerprint.
+Go to your Firebase Console > Project Settings > General > Your Apps (Android).
+Click "Add fingerprint" and paste the SHA-1 key there.
+Download the updated google-services.json file and replace the one currently in your frontend folder with the new one.
+Once you've done that, let me know, and I will show you how to start the EAS Development Build on your phone!
+
+eas.json
+1:21 PM
