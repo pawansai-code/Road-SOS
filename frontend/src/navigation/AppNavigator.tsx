@@ -9,6 +9,7 @@ import HelpScreen from '../screens/HelpScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import SuccessScreen from '../screens/SuccessScreen';
 import HistoryScreen from '../screens/HistoryScreen';
+import LiveTrackingScreen from '../screens/LiveTrackingScreen';
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -18,6 +19,7 @@ export type RootStackParamList = {
   Profile: undefined;
   Success: undefined;
   History: undefined;
+  LiveTracking: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -40,6 +42,7 @@ export default function AppNavigator() {
         <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen name="Success" component={SuccessScreen} />
         <Stack.Screen name="History" component={HistoryScreen} />
+        <Stack.Screen name="LiveTracking" component={LiveTrackingScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

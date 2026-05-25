@@ -522,7 +522,11 @@ export default function HomeScreen() {
           />
           <QuickAction icon="phone-in-talk" label="Dial 112" />
           <QuickAction icon="chat-bubble-outline" label="Chat Us" />
-          <QuickAction icon="my-location" label="TrackMe" />
+          <QuickAction 
+            icon="my-location" 
+            label="TrackMe" 
+            onPress={() => navigation.navigate("LiveTracking")}
+          />
         </View>
 
 
