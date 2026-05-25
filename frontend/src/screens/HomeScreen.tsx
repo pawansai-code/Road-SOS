@@ -61,6 +61,24 @@ export default function HomeScreen() {
       try {
         let loc = await Location.getCurrentPositionAsync({});
         setLocation(loc);
+
+        // Reverse geocode to get human-readable address
+        try {
+          const geocode = await Location.reverseGeocodeAsync({
+            latitude: loc.coords.latitude,
+            longitude: loc.coords.longitude
+          });
+          if (geocode && geocode.length > 0) {
+             const addr = geocode[0];
+             // Combine street and city, filtering out nulls
+             const parts = [addr.name || addr.street, addr.city || addr.subregion, addr.region].filter(Boolean);
+             setCurrentLocation(parts.join(', ') || "Location Acquired");
+          } else {
+             setCurrentLocation("Location Acquired");
+          }
+        } catch(geoErr) {
+           setCurrentLocation("Location Acquired");
+        }
       } catch (e) {
         setLocationError("Failed to fetch location");
       }
@@ -236,8 +254,7 @@ export default function HomeScreen() {
         "BACKEND RESPONSE:",
         response.data
       );
-      // UPDATE LOCATION BANNER WITH MAP LINK
-      setCurrentLocation(response.data.map_link)
+      // Map link returned from backend: response.data.map_link
       return true;
     } catch (error) {
       console.log(
@@ -725,6 +742,10 @@ export default function HomeScreen() {
                 <TouchableOpacity
                   activeOpacity={0.7}
                   className="flex-row items-center py-3.5 px-4 rounded-2xl mb-1.5 active:bg-gray-900"
+                  onPress={() => {
+                    toggleSidebar(false);
+                    navigation.navigate("Profile");
+                  }}
                 >
                   <MaterialIcons
                     name="contact-phone"
