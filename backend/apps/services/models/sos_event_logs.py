@@ -1,7 +1,8 @@
 from django.db import models
+from apps.users.models.user_profile import UserProfile
 
 class SOSEventLog(models.Model):
-    firebase_uid = models.CharField(max_length=128)
+    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE, to_field='firebase_uid', db_column='user_id', related_name='sos_event_logs')
     event_type = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
 

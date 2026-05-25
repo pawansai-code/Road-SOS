@@ -43,3 +43,9 @@ How we can fix this:
 
 Option A (Recommended for MVP): Let me change our Django model to create a brand new table (e.g., service_call_logs) that perfectly matches the simple structure we want (just firebase_uid, event_type, and timestamp).
 Option B (Use existing table): If we must use sos_event_logs, we need to first create a dummy "Incident" in the database, use CALL_TRIGGERED as the event_type, and save "POLICE" inside the event_message column.
+
+4. ERROR: One-tap big SOS button failing silently (IP Mismatch)
+---------------------------------------------------------
+- Symptoms: When tapping the central SOS button, the countdown finishes but no map link is generated and no SOS trigger happens on the backend.
+- Cause: The BASE_URL in HomeScreen.tsx was hardcoded to an old IP address (e.g. 10.90.25.192), failing to reach the backend configured at the new Wi-Fi IP address (192.168.43.71).
+- Solution: Updated the BASE_URL in HomeScreen.tsx to match the active backend IP address, aligning it with the API_BASE_URL configurations in userSlice.ts and sosSlice.ts.

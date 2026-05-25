@@ -12,7 +12,13 @@ class SOSEventLogView(APIView):
         serializer = SOSEventLogSerializer(data=request.data)
         
         if serializer.is_valid():
-            serializer.save(firebase_uid=uid)
+            serializer.save(user_id=uid)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
             
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request):
+        uid = self.get_firebase_uid(request)
+        logs = SOSEventLog.objects.filter(user_id=uid)
+        serializer = SOSEventLogSerializer(logs, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

@@ -6,4 +6,5 @@ urlpatterns = [
     path('api/users/', include('apps.users.urls')),
     path('api/services/', include('apps.services.urls')),
     path('api/contacts/', include('apps.emergency_contacts.urls')),
+    path('api/sos/', include('apps.sos.urls.sos_urls')),
 ]

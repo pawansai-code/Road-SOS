@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Location from "expo-location";
+import * as SMS from "expo-sms";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
   triggerSOS,
@@ -73,18 +74,40 @@ export default function HomeScreen() {
       [
         {
           text: "Call",
-          onPress: () =>
+          onPress: () => {
+            dispatch(triggerSOS(contact.contact_name));
+            dispatch(logSOSEventToBackend(contact.contact_name));
             Linking.openURL(`tel:${contact.phone_number}`).catch((err) =>
               console.log("Error opening dialer:", err),
-            ),
+            );
+          }
         },
         {
           text: "Send SMS",
-          onPress: () => {
+          onPress: async () => {
+            dispatch(triggerSOS(contact.contact_name));
+            dispatch(logSOSEventToBackend(contact.contact_name));
+            
+            let activeLoc = location;
+            if (!activeLoc?.coords) {
+              try {
+                let { status } = await Location.requestForegroundPermissionsAsync();
+                if (status === "granted") {
+                  activeLoc = await Location.getLastKnownPositionAsync();
+                  if (!activeLoc?.coords) {
+                    activeLoc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+                  }
+                  setLocation(activeLoc);
+                }
+              } catch (err) {
+                console.log("Contact SMS location fetch failed", err);
+              }
+            }
+
             let message =
               smsTemplate || "🚨 EMERGENCY SOS 🚨 I need immediate assistance!";
-            if (location) {
-              message += `\n\nLive Location: https://maps.google.com/?q=${location.coords.latitude},${location.coords.longitude}`;
+            if (activeLoc?.coords) {
+              message += `\n\nLive Location: https://maps.google.com/?q=${activeLoc.coords.latitude},${activeLoc.coords.longitude}`;
             } else {
               message += `\n\nLive Location: Unknown (Fetching failed or denied)`;
             }
@@ -189,25 +212,15 @@ export default function HomeScreen() {
     };
   }, []);
 
-  const BASE_URL = "http://10.90.25.192:8000"
-  const sendSOSRequest = async () => {
+  const BASE_URL = "http://192.168.43.71:8000"
+  const sendSOSRequest = async (overrideLoc?: Location.LocationObject | null) => {
     try {
-      // Check location exists
-      if (!location?.coords) {
-        Alert.alert(
-          "Location Error",
-          "Location not available"
-        );
-        return false;
-      }
-      // Prepare data
+      const activeLoc = overrideLoc || location;
+      // Prepare data, fallback to 0.0 if location is missing so emergency request still goes through
       const sosData = {
-        latitude:
-          location.coords.latitude,
-        longitude:
-          location.coords.longitude,
-        service_type:
-          selectedService
+        latitude: activeLoc?.coords?.latitude || 0.0,
+        longitude: activeLoc?.coords?.longitude || 0.0,
+        service_type: selectedService
       };
       console.log(
         "SENDING TO BACKEND:",
@@ -262,8 +275,47 @@ export default function HomeScreen() {
             timerRef.current = null;
           }
           setCountdown(null);
+
+          // Actively fetch fresh location if it's missing
+          let activeLoc = location;
+          if (!activeLoc?.coords) {
+            try {
+              // Request permissions again just in case it was denied previously
+              let { status } = await Location.requestForegroundPermissionsAsync();
+              if (status === "granted") {
+                // Try to get last known position first (much faster, less likely to hang)
+                activeLoc = await Location.getLastKnownPositionAsync();
+                
+                // If no last known position, force a fresh fetch
+                if (!activeLoc?.coords) {
+                  activeLoc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+                }
+                setLocation(activeLoc);
+                setLocationError(null);
+              } else {
+                console.log("Location permission denied during SOS trigger");
+              }
+            } catch (err) {
+              console.log("Failed to fetch fresh location", err);
+            }
+          }
+
           //send data to backend and trigger SOS
-          const success = await sendSOSRequest();
+          const success = await sendSOSRequest(activeLoc);
+
+          const isAvailable = await SMS.isAvailableAsync();
+          if (isAvailable) {
+            const numbers = ["112", ...contacts.map((c: any) => c.phone_number)];
+            let message = smsTemplate || "🚨 EMERGENCY SOS 🚨 I need immediate assistance!";
+            if (activeLoc?.coords) {
+              message += `\n\nLive Location: https://maps.google.com/?q=${activeLoc.coords.latitude},${activeLoc.coords.longitude}`;
+            } else {
+              message += `\n\nLive Location: Unknown (Fetching failed or denied)`;
+            }
+            // Open SMS composer without awaiting so we can immediately navigate to success screen
+            SMS.sendSMSAsync(numbers, message).catch(console.error);
+          }
+
           if (success) {
             dispatch(triggerSOS());
             navigation.navigate("Success");
@@ -325,46 +377,23 @@ export default function HomeScreen() {
     label: string;
     phoneNumber: string;
   }) => {
-    const isSelected = selectedService === label;
-
     return (
       <TouchableOpacity
-        className={`
-        w-[23%]
-        rounded-2xl
-        items-center
-        justify-center
-        p-3
-        mb-4
-        shadow-sm
-        border
-
-        ${isSelected
-            ? "bg-yellow-400 border-yellow-300"
-            : "bg-gray-900 border-gray-800"
-          }
-      `}
+        className="w-[23%] rounded-2xl items-center justify-center p-3 mb-4 shadow-sm border bg-gray-900 border-gray-800"
         onPress={() => {
           setSelectedService(label);
-
           console.log("SELECTED SERVICE:", label);
+          handleEmergencyCall(label, phoneNumber);
         }}
       >
         <MaterialIcons
           name={icon}
           size={28}
-          color={isSelected ? "#000" : "#facc15"}
+          color="#facc15"
         />
 
         <Text
-          className={`
-          font-bold
-          text-[10px]
-          mt-2
-          text-center
-
-          ${isSelected ? "text-black" : "text-white"}
-        `}
+          className="font-bold text-[10px] mt-2 text-center text-white"
           numberOfLines={1}
         >
           {label}

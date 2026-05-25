@@ -5,12 +5,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
-import { clearHistory } from '../store/slices/sosSlice';
+import { clearHistory, fetchSOSHistory } from '../store/slices/sosSlice';
 
 export default function HistoryScreen() {
   const navigation = useNavigation();
   const dispatch = useAppDispatch();
   const history = useAppSelector((state) => state.sos.history);
+
+  React.useEffect(() => {
+    dispatch(fetchSOSHistory());
+  }, [dispatch]);
 
   const handleClearHistory = () => {
     Alert.alert(

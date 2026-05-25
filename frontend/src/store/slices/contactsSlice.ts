@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 
-const API_BASE_URL = 'http://192.168.43.149:8000/api';
+const API_BASE_URL = 'http://192.168.43.71:8000/api';
 const DUMMY_UID = 'dummy_user_123';
 
 export interface EmergencyContact {
