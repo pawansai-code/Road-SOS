@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Location from "expo-location";
 import * as SMS from "expo-sms";
+import * as Notifications from "expo-notifications";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
   triggerSOS,
@@ -28,6 +29,14 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/AppNavigator";
 import axios from 'axios';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
 
 export default function HomeScreen() {
   const dispatch = useAppDispatch();
@@ -65,7 +74,49 @@ export default function HomeScreen() {
         setLocationError("Failed to fetch location");
       }
     })();
+
+    (async () => {
+      await Notifications.requestPermissionsAsync();
+      
+      if (Platform.OS === 'android') {
+        await Notifications.setNotificationChannelAsync('medical-id', {
+          name: 'Medical ID Emergency Alerts',
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: '#FF231F7C',
+          lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+          bypassDnd: true,
+        });
+      }
+    })();
   }, [dispatch]);
+
+  const showMedicalIDNotification = async () => {
+    let emergencyContactsText = contacts.length > 0 
+      ? contacts.map(c => `${c.contact_name} (${c.relationship}): ${c.phone_number}`).join('\n')
+      : "No emergency contacts saved.";
+
+    let body = `Blood Type: ${profile?.blood_group || 'Unknown'}\n`;
+    if (profile?.medical_notes) {
+      body += `Notes: ${profile.medical_notes}\n`;
+    }
+    body += `\nEmergency Contacts:\n${emergencyContactsText}`;
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: `🚨 MEDICAL ID: ${profile?.full_name?.toUpperCase() || 'GUEST'} 🚨`,
+        body: body,
+        sound: true,
+        priority: Notifications.AndroidNotificationPriority.MAX,
+        autoDismiss: false,
+        sticky: true,
+      },
+      trigger: {
+        seconds: 1,
+        channelId: 'medical-id',
+      },
+    }).catch(err => console.log("Failed to show medical notification:", err));
+  };
 
   const handleContactPress = (contact: any) => {
     Alert.alert(
@@ -77,6 +128,7 @@ export default function HomeScreen() {
           onPress: () => {
             dispatch(triggerSOS(contact.contact_name));
             dispatch(logSOSEventToBackend(contact.contact_name));
+            showMedicalIDNotification();
             Linking.openURL(`tel:${contact.phone_number}`).catch((err) =>
               console.log("Error opening dialer:", err),
             );
@@ -87,6 +139,7 @@ export default function HomeScreen() {
           onPress: async () => {
             dispatch(triggerSOS(contact.contact_name));
             dispatch(logSOSEventToBackend(contact.contact_name));
+            showMedicalIDNotification();
             
             let activeLoc = location;
             if (!activeLoc?.coords) {
@@ -300,6 +353,8 @@ export default function HomeScreen() {
             }
           }
 
+          showMedicalIDNotification();
+
           //send data to backend and trigger SOS
           const success = await sendSOSRequest(activeLoc);
 
@@ -362,6 +417,9 @@ export default function HomeScreen() {
     dispatch(triggerSOS(serviceName));
     // Sync to backend DB
     dispatch(logSOSEventToBackend(serviceName));
+    
+    showMedicalIDNotification();
+
     // Route to actual nearest service or dummy number for MVP
     Linking.openURL(`tel:${phoneNumber}`).catch((err) =>
       console.log("Error opening dialer:", err),
