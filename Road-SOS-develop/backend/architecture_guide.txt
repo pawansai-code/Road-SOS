@@ -1,0 +1,37 @@
+# Road-SOS Feature-Based Architecture Guide
+
+This is a brief, easy-to-understand breakdown of what each folder does in this Feature-Based Architecture. 
+
+Think of this structure as a restaurant:
+* Models/Repositories manage the ingredients (Database).
+* Services are the chefs cooking the meal (Business Logic).
+* Views/Serializers are the waiters taking orders and delivering food (API).
+
+---
+
+## 1. The App Structure (`apps/sos/`, `apps/users/`, etc.)
+Each feature is a fully self-contained "mini-application". Here is how the folders inside them work together:
+
+* `models/`: Defines how your data looks in the database. (Example: A Python class for an `Incident` that translates into a SQL table).
+* `repositories/`: ONLY handles database queries. Instead of writing `Incident.objects.filter(...)` randomly in your code, you put it here. It keeps your database operations centralized and reusable.
+* `services/`: The brain of your app. All business logic goes here. If a user triggers an SOS, the `incident_service.py` will figure out who to contact, calculate GPS proximity, and determine the severity. It never directly talks to the API or the database; it uses repositories and returns data to views.
+* `serializers/`: The bouncer/translator. When a user sends JSON data (like an SOS request), serializers validate it to ensure it's correct before letting it in. When sending data back, they translate complex database models into JSON.
+* `views/`: API endpoints only. These are very thin files. They receive an HTTP request (like a POST from the mobile app), call a `service` to do the heavy lifting, and return an HTTP response.
+* `urls/`: Maps the API routes (e.g., `/api/sos/trigger/`) to the specific views.
+* `constants/` & `utils/`: Helper files for things like fixed drop-down choices (e.g., `STATUS = 'PENDING'`) or minor helper functions (e.g., distance calculators).
+
+## 2. Global Services (`apps/services/`)
+While most services are tied to a specific feature (like `sos`), some are global and shared across the whole app.
+
+* `hospital_service.py` & `police_service.py`: These handle external integrations (like calling a third-party hospital API or police routing system). Both the `sos` app and the `history` app might need to use these, so they live in a shared space.
+
+## 3. Core System (`core/`)
+This is the main control center for the entire Django project.
+
+* `settings/`: Controls environment variables, database connections, and installed apps. Split into `base.py` (shared), `development.py` (local testing), and `production.py` (live server).
+* `middleware/`: Code that runs on every single request before it reaches the view (e.g., checking if an API key is valid or logging request times).
+* `permissions/`: Global rules for who can access what (e.g., ensuring only Admins can access certain endpoints).
+* `exceptions/`: Custom error handling. Instead of standard Django errors, you can ensure your API always returns a consistent error format (like `{"error": "Invalid GPS data", "code": 400}`).
+
+## Why this is great:
+If you ever need to change how the database works, you only touch `repositories/`. If you need to change how the mobile app sends data, you only touch `views/` and `serializers/`. Your core logic in `services/` remains completely safe and unchanged!
