@@ -5,6 +5,8 @@ import * as Location from 'expo-location';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
+import { useColorScheme } from 'nativewind';
 
 const { width, height } = Dimensions.get('window');
 
@@ -15,6 +17,8 @@ const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO;
 export default function LiveTrackingScreen() {
   const navigation = useNavigation();
   const mapRef = useRef<MapView>(null);
+  const { t } = useTranslation();
+  const { colorScheme } = useColorScheme();
   
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -26,11 +30,10 @@ export default function LiveTrackingScreen() {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        setErrorMsg('Permission to access location was denied');
+        setErrorMsg(t("locationDenied"));
         return;
       }
 
-      // Get initial quick location
       try {
         let initialLocation = await Location.getLastKnownPositionAsync();
         if (!initialLocation) {
@@ -50,32 +53,30 @@ export default function LiveTrackingScreen() {
         console.log("Error getting initial location", err);
       }
 
-      // Start aggressive live tracking
       try {
         locationSubscription = await Location.watchPositionAsync(
           {
             accuracy: Location.Accuracy.High,
-            timeInterval: 2000, // Update every 2 seconds
-            distanceInterval: 1, // Update every 1 meter
+            timeInterval: 5000, 
+            distanceInterval: 5, 
           },
           (newLocation) => {
             setLocation(newLocation);
             
-            // Optionally auto-center map if tracking is active
             if (isTracking && mapRef.current) {
               mapRef.current.animateCamera({
                 center: {
                   latitude: newLocation.coords.latitude,
                   longitude: newLocation.coords.longitude,
                 },
-                pitch: 45, // Angled for a cool "navigation" look
+                pitch: 45,
                 heading: newLocation.coords.heading || 0, 
               });
             }
           }
         );
       } catch (err) {
-         setErrorMsg("Failed to start live tracking.");
+         setErrorMsg(t("fetchingLocation"));
       }
     })();
 
@@ -101,17 +102,19 @@ export default function LiveTrackingScreen() {
     }
   };
 
+  const isLight = colorScheme === 'light';
+
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, isLight && { backgroundColor: '#f3f4f6' }]} edges={['top']}>
       {/* Header Overlay */}
       <View style={styles.header}>
         <TouchableOpacity 
-          style={styles.backButton}
+          style={[styles.backButton, isLight && { backgroundColor: 'rgba(255,255,255,0.8)' }]}
           onPress={() => navigation.goBack()}
         >
-          <MaterialIcons name="arrow-back" size={24} color="#fff" />
+          <MaterialIcons name="arrow-back" size={24} color={isLight ? "#000" : "#fff"} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Live Tracking</Text>
+        <Text style={[styles.headerTitle, isLight && { backgroundColor: 'rgba(255,255,255,0.8)', color: '#000' }]}>{t("liveTracking")}</Text>
         <View style={{width: 40}} /> 
       </View>
 
@@ -123,7 +126,7 @@ export default function LiveTrackingScreen() {
       ) : !location ? (
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color="#facc15" />
-          <Text style={styles.loadingText}>Acquiring GPS Signal...</Text>
+          <Text style={[styles.loadingText, isLight && { color: '#000' }]}>{t("acquiringGPS")}</Text>
         </View>
       ) : (
         <View style={styles.mapContainer}>
@@ -131,11 +134,11 @@ export default function LiveTrackingScreen() {
             ref={mapRef}
             style={styles.map}
             provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : PROVIDER_DEFAULT}
-            showsUserLocation={false} // We draw our own custom marker instead
+            showsUserLocation={false} 
             showsMyLocationButton={false}
             showsCompass={false}
             mapType="standard"
-            onPanDrag={() => setIsTracking(false)} // Stop auto-centering if user drags the map
+            onPanDrag={() => setIsTracking(false)} 
             initialRegion={{
               latitude: location.coords.latitude,
               longitude: location.coords.longitude,
@@ -148,8 +151,8 @@ export default function LiveTrackingScreen() {
                 latitude: location.coords.latitude,
                 longitude: location.coords.longitude,
               }}
-              title="You"
-              description="Live Location"
+              title={t("you")}
+              description={t("liveLocation")}
             >
               {/* Custom Marker UI */}
               <View style={styles.markerContainer}>
@@ -168,22 +171,22 @@ export default function LiveTrackingScreen() {
           )}
 
           {/* Bottom Info Panel */}
-          <View style={styles.bottomPanel}>
+          <View style={[styles.bottomPanel, isLight && { backgroundColor: '#ffffff', borderColor: '#e5e7eb' }]}>
             <View style={styles.infoRow}>
               <View style={styles.infoItem}>
-                <MaterialIcons name="speed" size={20} color="#facc15" />
-                <Text style={styles.infoText}>
+                <MaterialIcons name="speed" size={20} color={isLight ? "#eab308" : "#facc15"} />
+                <Text style={[styles.infoText, isLight && { color: '#111827' }]}>
                   {location.coords.speed ? Math.round(location.coords.speed * 3.6) : 0} km/h
                 </Text>
               </View>
               <View style={styles.infoItem}>
                 <MaterialIcons name="gps-fixed" size={20} color="#4ade80" />
-                <Text style={styles.infoText}>
+                <Text style={[styles.infoText, isLight && { color: '#111827' }]}>
                   ±{Math.round(location.coords.accuracy || 0)}m
                 </Text>
               </View>
             </View>
-            <Text style={styles.latLngText}>
+            <Text style={[styles.latLngText, isLight && { color: '#6b7280' }]}>
               {location.coords.latitude.toFixed(5)}, {location.coords.longitude.toFixed(5)}
             </Text>
           </View>
@@ -297,11 +300,11 @@ const styles = StyleSheet.create({
     bottom: 30,
     left: 20,
     right: 20,
-    backgroundColor: '#111827', // Tailwind gray-900
+    backgroundColor: '#111827',
     borderRadius: 20,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#1f2937', // Tailwind gray-800
+    borderColor: '#1f2937',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.5,
@@ -324,7 +327,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   latLngText: {
-    color: '#9ca3af', // Tailwind gray-400
+    color: '#9ca3af', 
     textAlign: 'center',
     fontSize: 12,
     marginTop: 4,

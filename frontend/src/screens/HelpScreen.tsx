@@ -15,6 +15,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
+import { useColorScheme } from 'nativewind';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -24,43 +26,44 @@ type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Help'>;
 };
 
-const HELP_DATA = [
-  {
-    id: '1',
-    title: 'How to trigger SOS?',
-    icon: 'touch-app',
-    content:
-      '1. Open the application.\n2. Tap the large pulsating SOS button on the home screen.\n3. Wait 5 seconds for the countdown, or tap again to cancel.\n4. Your emergency contacts and local authorities will be notified with your live GPS location.',
-  },
-  {
-    id: '2',
-    title: 'What happens after an SOS is sent?',
-    icon: 'local-hospital',
-    content:
-      'Once the SOS is triggered, the app immediately dispatches your profile information (blood group, medical notes) and real-time location to the nearest control room. Volunteers in your vicinity may also receive an alert.',
-  },
-  {
-    id: '3',
-    title: 'How to update my medical profile?',
-    icon: 'person',
-    content:
-      'Navigate to the Profile screen from the sidebar or quick actions menu. You can update your full name, blood group, phone number, and critical medical notes there. Make sure to hit "Save" so responders have accurate data.',
-  },
-  {
-    id: '4',
-    title: 'Can I add multiple emergency contacts?',
-    icon: 'contact-phone',
-    content:
-      'Yes! Go to the "E-Contact" section in the sidebar. You can add up to 5 emergency contacts. These contacts will receive an SMS with your location link when an emergency is triggered.',
-  },
-];
-
 export default function HelpScreen({ navigation }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const { t } = useTranslation();
+  const { colorScheme } = useColorScheme();
+  const isLight = colorScheme === 'light';
+  const styles = getStyles(isLight);
 
   const headerOpacity = useRef(new Animated.Value(0)).current;
   const listOpacity = useRef(new Animated.Value(0)).current;
   const listTranslateY = useRef(new Animated.Value(30)).current;
+
+  // Re-define data to use translations dynamically
+  const HELP_DATA = [
+    {
+      id: '1',
+      title: t("helpQ1"),
+      icon: 'touch-app',
+      content: t("helpA1"),
+    },
+    {
+      id: '2',
+      title: t("helpQ2"),
+      icon: 'local-hospital',
+      content: t("helpA2"),
+    },
+    {
+      id: '3',
+      title: t("helpQ3"),
+      icon: 'person',
+      content: t("helpA3"),
+    },
+    {
+      id: '4',
+      title: t("helpQ4"),
+      icon: 'contact-phone',
+      content: t("helpA4"),
+    },
+  ];
 
   useEffect(() => {
     Animated.stagger(150, [
@@ -79,14 +82,14 @@ export default function HelpScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#000000" />
+      <StatusBar barStyle={isLight ? "dark-content" : "light-content"} backgroundColor={isLight ? "#f3f4f6" : "#000000"} />
 
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <MaterialIcons name="arrow-back" size={24} color="#facc15" />
+          <MaterialIcons name="arrow-back" size={24} color={isLight ? "#eab308" : "#facc15"} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Help & Instructions</Text>
+        <Text style={styles.headerTitle}>{t("helpInstructions")}</Text>
         <View style={{ width: 32 }} />
       </View>
 
@@ -97,9 +100,9 @@ export default function HelpScreen({ navigation }: Props) {
           <View style={styles.banner}>
             <MaterialIcons name="support-agent" size={48} color="#ef4444" />
             <View style={styles.bannerText}>
-              <Text style={styles.bannerTitle}>Emergency Guide</Text>
+              <Text style={styles.bannerTitle}>{t("emergencyGuide")}</Text>
               <Text style={styles.bannerBody}>
-                Learn how to effectively use ROAD SOS in critical situations to ensure rapid response.
+                {t("emergencyGuideDesc")}
               </Text>
             </View>
           </View>
@@ -120,7 +123,7 @@ export default function HelpScreen({ navigation }: Props) {
                     <MaterialIcons
                       name={item.icon as any}
                       size={20}
-                      color={isExpanded ? '#000000' : '#facc15'}
+                      color={isExpanded ? '#000000' : (isLight ? '#eab308' : '#facc15')}
                     />
                   </View>
                   <Text style={[styles.accordionTitle, isExpanded && styles.accordionTitleActive]}>
@@ -129,7 +132,7 @@ export default function HelpScreen({ navigation }: Props) {
                   <MaterialIcons
                     name={isExpanded ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
                     size={28}
-                    color={isExpanded ? '#facc15' : '#6b7280'}
+                    color={isExpanded ? (isLight ? '#eab308' : '#facc15') : '#6b7280'}
                   />
                 </TouchableOpacity>
 
@@ -150,25 +153,25 @@ export default function HelpScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000000' },
+const getStyles = (isLight: boolean) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: isLight ? '#f3f4f6' : '#000000' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#000000',
+    backgroundColor: isLight ? '#ffffff' : '#000000',
     borderBottomWidth: 1,
-    borderBottomColor: '#111827',
+    borderBottomColor: isLight ? '#e5e7eb' : '#111827',
   },
   backBtn: { padding: 8 },
-  headerTitle: { color: '#ffffff', fontSize: 18, fontWeight: '700' },
+  headerTitle: { color: isLight ? '#111827' : '#ffffff', fontSize: 18, fontWeight: '700' },
   scrollContent: { padding: 20, paddingBottom: 40 },
   banner: {
-    backgroundColor: 'rgba(127,29,29,0.25)',
+    backgroundColor: 'rgba(127,29,29,0.1)',
     borderWidth: 1,
-    borderColor: 'rgba(153,27,27,0.4)',
+    borderColor: 'rgba(153,27,27,0.2)',
     borderRadius: 16,
     padding: 20,
     marginBottom: 24,
@@ -176,12 +179,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   bannerText: { marginLeft: 16, flex: 1 },
-  bannerTitle: { color: '#f87171', fontWeight: '900', fontSize: 17, marginBottom: 4 },
-  bannerBody: { color: '#d1d5db', fontSize: 12, lineHeight: 20 },
+  bannerTitle: { color: '#ef4444', fontWeight: '900', fontSize: 17, marginBottom: 4 },
+  bannerBody: { color: isLight ? '#4b5563' : '#d1d5db', fontSize: 12, lineHeight: 20 },
   accordionCard: {
-    backgroundColor: '#111827',
+    backgroundColor: isLight ? '#ffffff' : '#111827',
     borderWidth: 1,
-    borderColor: '#1f2937',
+    borderColor: isLight ? '#e5e7eb' : '#1f2937',
     borderRadius: 16,
     marginBottom: 12,
     overflow: 'hidden',
@@ -195,21 +198,23 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#1f2937',
+    backgroundColor: isLight ? '#f9fafb' : '#1f2937',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
+    borderWidth: 1,
+    borderColor: isLight ? '#e5e7eb' : 'transparent',
   },
-  accordionIconActive: { backgroundColor: '#facc15' },
-  accordionTitle: { flex: 1, color: '#ffffff', fontWeight: '700', fontSize: 15 },
-  accordionTitleActive: { color: '#facc15' },
+  accordionIconActive: { backgroundColor: isLight ? '#facc15' : '#facc15' },
+  accordionTitle: { flex: 1, color: isLight ? '#111827' : '#ffffff', fontWeight: '700', fontSize: 15 },
+  accordionTitleActive: { color: isLight ? '#ca8a04' : '#facc15' },
   accordionBody: { paddingHorizontal: 16, paddingBottom: 16, paddingTop: 4 },
   accordionBodyInner: {
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: isLight ? '#f9fafb' : 'rgba(0,0,0,0.4)',
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(31,41,55,0.5)',
+    borderColor: isLight ? '#e5e7eb' : 'rgba(31,41,55,0.5)',
   },
-  accordionContent: { color: '#d1d5db', fontSize: 14, lineHeight: 24 },
+  accordionContent: { color: isLight ? '#4b5563' : '#d1d5db', fontSize: 14, lineHeight: 24 },
 });

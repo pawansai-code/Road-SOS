@@ -19,6 +19,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
+import { useColorScheme } from 'nativewind';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { updateProfile, clearProfile, fetchProfile, UserProfile } from '../store/slices/userSlice';
 import { fetchContacts, addContact, deleteContact } from '../store/slices/contactsSlice';
@@ -30,6 +32,10 @@ type Props = {
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
 
 export default function ProfileScreen({ navigation }: Props) {
+  const { t } = useTranslation();
+  const { colorScheme } = useColorScheme();
+  const isLight = colorScheme === 'light';
+  const styles = getStyles(isLight);
   const dispatch = useAppDispatch();
   const { profile, isLoading, error } = useAppSelector((state) => state.user);
   const { contacts, loading: contactsLoading } = useAppSelector((state) => state.contacts);
@@ -176,14 +182,14 @@ export default function ProfileScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#000000" />
+      <StatusBar barStyle={isLight ? "dark-content" : "light-content"} backgroundColor={isLight ? "#f3f4f6" : "#000000"} />
 
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn}>
           <MaterialIcons name="arrow-back" size={24} color="#facc15" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>User Profile</Text>
+        <Text style={styles.headerTitle}>{t("userProfile")}</Text>
         <TouchableOpacity onPress={handleDelete} style={styles.headerBtn}>
           <MaterialIcons name="delete-outline" size={24} color="#ef4444" />
         </TouchableOpacity>
@@ -224,14 +230,14 @@ export default function ProfileScreen({ navigation }: Props) {
           </View>
           
           <TouchableOpacity onPress={handlePickImage} style={{ marginTop: 12 }}>
-            <Text style={styles.avatarHint}>Change Photo</Text>
+            <Text style={styles.avatarHint}>{t("changePhoto")}</Text>
           </TouchableOpacity>
           {formData.profile_image ? (
             <TouchableOpacity
               onPress={() => handleChange('profile_image', '')}
               style={styles.removePhotoBtn}
             >
-              <Text style={styles.removePhotoText}>Remove Photo</Text>
+              <Text style={styles.removePhotoText}>{t("removePhoto")}</Text>
             </TouchableOpacity>
           ) : null}
         </View>
@@ -241,12 +247,12 @@ export default function ProfileScreen({ navigation }: Props) {
 
           {/* Full Name */}
           <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>Full Name <Text style={styles.required}>*</Text></Text>
+            <Text style={styles.fieldLabel}>{t("fullName")} <Text style={styles.required}>*</Text></Text>
             <View style={styles.inputRow}>
               <MaterialIcons name="person" size={20} color="#6b7280" />
               <TextInput
                 style={styles.input}
-                placeholder="e.g. John Doe"
+                placeholder={t("egJohnDoe")}
                 placeholderTextColor="#4b5563"
                 value={formData.full_name}
                 onChangeText={(t) => handleChange('full_name', t)}
@@ -262,12 +268,12 @@ export default function ProfileScreen({ navigation }: Props) {
 
           {/* Phone */}
           <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>Phone Number <Text style={styles.required}>*</Text></Text>
+            <Text style={styles.fieldLabel}>{t("phoneNumber")} <Text style={styles.required}>*</Text></Text>
             <View style={styles.inputRow}>
               <MaterialIcons name="phone" size={20} color="#6b7280" />
               <TextInput
                 style={styles.input}
-                placeholder="+91 99999 99999"
+                placeholder={t("egPhone")}
                 placeholderTextColor="#4b5563"
                 keyboardType="phone-pad"
                 value={formData.phone_number}
@@ -283,7 +289,7 @@ export default function ProfileScreen({ navigation }: Props) {
 
           {/* Blood Group Picker */}
           <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>Blood Group <Text style={styles.required}>*</Text></Text>
+            <Text style={styles.fieldLabel}>{t("bloodGroup")} <Text style={styles.required}>*</Text></Text>
             <TouchableOpacity
               style={styles.inputRow}
               onPress={() => setShowBloodPicker((p) => !p)}
@@ -291,7 +297,7 @@ export default function ProfileScreen({ navigation }: Props) {
             >
               <MaterialIcons name="bloodtype" size={20} color="#ef4444" />
               <Text style={[styles.input, !formData.blood_group && { color: '#4b5563' }]}>
-                {formData.blood_group || 'Select blood group'}
+                {formData.blood_group || t('selectBloodGroup')}
               </Text>
               <MaterialIcons
                 name={showBloodPicker ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
@@ -322,11 +328,11 @@ export default function ProfileScreen({ navigation }: Props) {
 
           {/* Medical Notes */}
           <View style={[styles.fieldGroup, { marginBottom: 0 }]}>
-            <Text style={styles.fieldLabel}>Medical Notes <Text style={styles.optional}>(Optional)</Text></Text>
+            <Text style={styles.fieldLabel}>{t("medicalNotes")} <Text style={styles.optional}>{t("optional")}</Text></Text>
             <View style={styles.textAreaBox}>
               <TextInput
                 style={styles.textArea}
-                placeholder="List allergies, medications, chronic conditions, etc."
+                placeholder={t("medicalNotesDesc")}
                 placeholderTextColor="#4b5563"
                 multiline
                 numberOfLines={4}
@@ -335,7 +341,7 @@ export default function ProfileScreen({ navigation }: Props) {
                 onChangeText={(t) => handleChange('medical_notes', t)}
               />
             </View>
-            <Text style={styles.charCount}>{formData.medical_notes?.length || 0} characters</Text>
+            <Text style={styles.charCount}>{formData.medical_notes?.length || 0} {t("characters")}</Text>
           </View>
 
         </View>
@@ -344,7 +350,7 @@ export default function ProfileScreen({ navigation }: Props) {
         {isDirty && (
           <View style={styles.unsavedBanner}>
             <MaterialIcons name="info-outline" size={16} color="#facc15" />
-            <Text style={styles.unsavedText}>You have unsaved changes</Text>
+            <Text style={styles.unsavedText}>{t("unsavedChanges")}</Text>
           </View>
         )}
 
@@ -368,7 +374,7 @@ export default function ProfileScreen({ navigation }: Props) {
           ) : (
             <>
               <MaterialIcons name="save-alt" size={22} color="#000000" />
-              <Text style={styles.saveBtnText}>Save Profile</Text>
+              <Text style={styles.saveBtnText}>{t("saveProfile")}</Text>
             </>
           )}
         </TouchableOpacity>
@@ -382,12 +388,12 @@ export default function ProfileScreen({ navigation }: Props) {
           disabled={!isDirty}
           activeOpacity={0.75}
         >
-          <Text style={[styles.discardBtnText, !isDirty && styles.discardBtnTextDisabled]}>Discard Changes</Text>
+          <Text style={[styles.discardBtnText, !isDirty && styles.discardBtnTextDisabled]}>{t("discardChanges")}</Text>
         </TouchableOpacity>
 
         {/* Emergency Contacts Section */}
         <View style={[styles.card, { marginTop: 24 }]}>
-          <Text style={[styles.fieldLabel, { fontSize: 13, color: '#facc15', marginBottom: 16 }]}>Emergency Contacts ({contacts.length}/5)</Text>
+          <Text style={[styles.fieldLabel, { fontSize: 13, color: '#facc15', marginBottom: 16 }]}>{t("emergencyContacts")} ({contacts.length}/5)</Text>
           
           {contacts.map((contact) => (
             <View key={contact.id} style={styles.contactItem}>
@@ -405,14 +411,14 @@ export default function ProfileScreen({ navigation }: Props) {
             <View style={styles.addContactForm}>
               <TextInput
                 style={[styles.input, styles.contactInput]}
-                placeholder="Name"
+                placeholder={t("name")}
                 placeholderTextColor="#4b5563"
                 value={newContact.contact_name}
                 onChangeText={(t) => setNewContact({ ...newContact, contact_name: t })}
               />
               <TextInput
                 style={[styles.input, styles.contactInput]}
-                placeholder="Relationship"
+                placeholder={t("relationship")}
                 placeholderTextColor="#4b5563"
                 value={newContact.relationship}
                 onChangeText={(t) => setNewContact({ ...newContact, relationship: t })}
@@ -431,7 +437,7 @@ export default function ProfileScreen({ navigation }: Props) {
                 ) : (
                   <>
                     <MaterialIcons name="add" size={20} color="#000000" />
-                    <Text style={styles.addContactBtnText}>Add Contact</Text>
+                    <Text style={styles.addContactBtnText}>{t("addContact")}</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -457,244 +463,128 @@ export default function ProfileScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000000' },
+
+const getStyles = (isLight: boolean) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: isLight ? '#f3f4f6' : '#000000' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#000000',
+    backgroundColor: isLight ? '#ffffff' : '#000000',
     borderBottomWidth: 1,
-    borderBottomColor: '#111827',
+    borderBottomColor: isLight ? '#e5e7eb' : '#111827',
   },
   headerBtn: { padding: 8 },
-  headerTitle: { color: '#ffffff', fontSize: 18, fontWeight: '700' },
+  headerTitle: { color: isLight ? '#111827' : '#ffffff', fontSize: 18, fontWeight: '700' },
   scrollContent: { padding: 24, paddingBottom: 60 },
-
-  // Avatar
   avatarSection: { alignItems: 'center', marginBottom: 28, marginTop: 8 },
   avatarOuter: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#111827',
-    borderWidth: 3,
-    borderColor: '#facc15',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
+    width: 120, height: 120, borderRadius: 60,
+    backgroundColor: isLight ? '#f3f4f6' : '#111827',
+    borderWidth: 3, borderColor: '#facc15',
+    alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
   },
   avatarImage: { width: '100%', height: '100%', borderRadius: 60 },
   avatarInitial: { color: '#facc15', fontSize: 40, fontWeight: '900' },
   changePhotoBadge: {
-    position: 'absolute',
-    bottom: 2,
-    right: 2,
-    backgroundColor: '#facc15',
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: '#000000',
+    position: 'absolute', bottom: 2, right: 2,
+    backgroundColor: '#facc15', width: 36, height: 36, borderRadius: 18,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 3, borderColor: isLight ? '#ffffff' : '#000000',
   },
-  avatarHint: { color: '#6b7280', fontSize: 13, fontWeight: '600' },
+  avatarHint: { color: isLight ? '#4b5563' : '#6b7280', fontSize: 13, fontWeight: '600' },
   removePhotoBtn: { marginTop: 8 },
   removePhotoText: { color: '#ef4444', fontSize: 12, fontWeight: '700' },
-
-  // Form
   card: {
-    backgroundColor: '#111827',
-    borderWidth: 1,
-    borderColor: '#1f2937',
-    borderRadius: 24,
-    padding: 20,
-    marginBottom: 16,
+    backgroundColor: isLight ? '#ffffff' : '#111827',
+    borderWidth: 1, borderColor: isLight ? '#e5e7eb' : '#1f2937',
+    borderRadius: 24, padding: 20, marginBottom: 16,
   },
   fieldGroup: { marginBottom: 20 },
-  fieldLabel: { color: '#9ca3af', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, marginLeft: 2 },
+  fieldLabel: { color: isLight ? '#4b5563' : '#9ca3af', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, marginLeft: 2 },
   required: { color: '#ef4444' },
-  optional: { color: '#6b7280', textTransform: 'none', letterSpacing: 0 },
+  optional: { color: isLight ? '#9ca3af' : '#6b7280', textTransform: 'none', letterSpacing: 0 },
   inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#000000',
-    borderWidth: 1,
-    borderColor: '#1f2937',
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 4,
-    minHeight: 52,
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: isLight ? '#f9fafb' : '#000000',
+    borderWidth: 1, borderColor: isLight ? '#d1d5db' : '#1f2937',
+    borderRadius: 14, paddingHorizontal: 14, paddingVertical: 4, minHeight: 52,
   },
   input: {
-    flex: 1,
-    color: '#ffffff',
-    fontWeight: '500',
-    marginLeft: 10,
-    fontSize: 15,
-    paddingVertical: 8,
+    flex: 1, color: isLight ? '#111827' : '#ffffff',
+    fontWeight: '500', marginLeft: 10, fontSize: 15, paddingVertical: 8,
   },
-
-  // Blood group
-  bloodGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 10,
-    gap: 8,
-  },
+  bloodGrid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 10, gap: 8 },
   bloodChip: {
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 12,
-    backgroundColor: '#000000',
-    borderWidth: 1,
-    borderColor: '#1f2937',
+    paddingHorizontal: 18, paddingVertical: 10, borderRadius: 12,
+    backgroundColor: isLight ? '#f9fafb' : '#000000',
+    borderWidth: 1, borderColor: isLight ? '#d1d5db' : '#1f2937',
   },
-  bloodChipActive: {
-    backgroundColor: '#facc15',
-    borderColor: '#facc15',
-  },
-  bloodChipText: { color: '#9ca3af', fontWeight: '700', fontSize: 14 },
+  bloodChipActive: { backgroundColor: '#facc15', borderColor: '#facc15' },
+  bloodChipText: { color: isLight ? '#4b5563' : '#9ca3af', fontWeight: '700', fontSize: 14 },
   bloodChipTextActive: { color: '#000000' },
-
-  // Text area
   textAreaBox: {
-    backgroundColor: '#000000',
-    borderWidth: 1,
-    borderColor: '#1f2937',
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    backgroundColor: isLight ? '#f9fafb' : '#000000',
+    borderWidth: 1, borderColor: isLight ? '#d1d5db' : '#1f2937',
+    borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12,
   },
-  textArea: { color: '#ffffff', fontWeight: '500', fontSize: 14, minHeight: 100 },
-  charCount: { color: '#4b5563', fontSize: 11, marginTop: 6, marginLeft: 4 },
-
-  // Unsaved banner
+  textArea: { color: isLight ? '#111827' : '#ffffff', fontWeight: '500', fontSize: 14, minHeight: 100 },
+  charCount: { color: isLight ? '#6b7280' : '#4b5563', fontSize: 11, marginTop: 6, marginLeft: 4 },
   unsavedBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(250,204,21,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(250,204,21,0.3)',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginBottom: 16,
-    gap: 8,
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: 'rgba(250,204,21,0.08)', borderWidth: 1, borderColor: 'rgba(250,204,21,0.3)',
+    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, marginBottom: 16, gap: 8,
   },
-  unsavedText: { color: '#facc15', fontSize: 13, fontWeight: '600' },
-
-  // Error
+  unsavedText: { color: isLight ? '#ca8a04' : '#facc15', fontSize: 13, fontWeight: '600' },
   errorBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(127,29,29,0.3)',
-    borderWidth: 1,
-    borderColor: '#7f1d1d',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 16,
-    gap: 8,
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: 'rgba(127,29,29,0.1)', borderWidth: 1, borderColor: '#7f1d1d',
+    borderRadius: 12, padding: 14, marginBottom: 16, gap: 8,
   },
-  errorText: { color: '#f87171', fontSize: 13, fontWeight: '600', flex: 1 },
-
-  // Buttons
+  errorText: { color: '#ef4444', fontSize: 13, fontWeight: '600', flex: 1 },
   saveBtn: {
-    width: '100%',
-    backgroundColor: '#facc15',
-    borderRadius: 16,
-    paddingVertical: 17,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 12,
+    width: '100%', backgroundColor: '#facc15', borderRadius: 16,
+    paddingVertical: 17, alignItems: 'center', justifyContent: 'center',
+    flexDirection: 'row', gap: 10, marginBottom: 12,
   },
   saveBtnLoading: { backgroundColor: '#ca8a04' },
-  saveBtnDisabled: { backgroundColor: '#374151', opacity: 0.6 },
+  saveBtnDisabled: { backgroundColor: isLight ? '#d1d5db' : '#374151', opacity: 0.6 },
   saveBtnText: { color: '#000000', fontWeight: '800', fontSize: 15, textTransform: 'uppercase', letterSpacing: 1.5 },
   discardBtn: {
-    width: '100%',
-    paddingVertical: 14,
-    alignItems: 'center',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#1f2937',
+    width: '100%', paddingVertical: 14, alignItems: 'center', borderRadius: 16,
+    borderWidth: 1, borderColor: isLight ? '#d1d5db' : '#1f2937',
   },
-  discardBtnText: { color: '#9ca3af', fontWeight: '600', fontSize: 14 },
-  discardBtnTextDisabled: { color: '#374151' },
-
-  // Modal
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.95)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalCloseArea: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  modalImageContainer: {
-    width: '100%',
-    height: '80%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalImage: {
-    width: '100%',
-    height: '100%',
-  },
-  modalCloseBtn: {
-    position: 'absolute',
-    top: -50,
-    right: 20,
-    padding: 10,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 30,
-  },
-
-  // Contacts
+  discardBtnText: { color: isLight ? '#4b5563' : '#9ca3af', fontWeight: '600', fontSize: 14 },
+  discardBtnTextDisabled: { color: isLight ? '#9ca3af' : '#374151' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' },
+  modalCloseArea: { ...StyleSheet.absoluteFillObject },
+  modalImageContainer: { width: '100%', height: '80%', justifyContent: 'center', alignItems: 'center' },
+  modalImage: { width: '100%', height: '100%' },
+  modalCloseBtn: { position: 'absolute', top: -50, right: 20, padding: 10, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 30 },
   contactItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#000000',
-    borderWidth: 1,
-    borderColor: '#1f2937',
-    borderRadius: 14,
-    padding: 12,
-    marginBottom: 10,
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: isLight ? '#f9fafb' : '#000000',
+    borderWidth: 1, borderColor: isLight ? '#d1d5db' : '#1f2937',
+    borderRadius: 14, padding: 12, marginBottom: 10,
   },
-  contactName: { color: '#ffffff', fontWeight: '700', fontSize: 15 },
-  contactRel: { color: '#9ca3af', fontWeight: '500', fontSize: 13 },
-  contactPhone: { color: '#6b7280', fontSize: 13, marginTop: 4 },
+  contactName: { color: isLight ? '#111827' : '#ffffff', fontWeight: '700', fontSize: 15 },
+  contactRel: { color: isLight ? '#6b7280' : '#9ca3af', fontWeight: '500', fontSize: 13 },
+  contactPhone: { color: isLight ? '#9ca3af' : '#6b7280', fontSize: 13, marginTop: 4 },
   deleteContactBtn: { padding: 8 },
   addContactForm: {
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: 14,
-    padding: 12,
-    marginTop: 8,
-    gap: 8,
+    backgroundColor: isLight ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.03)',
+    borderRadius: 14, padding: 12, marginTop: 8, gap: 8,
   },
   contactInput: {
-    backgroundColor: '#000000',
-    borderWidth: 1,
-    borderColor: '#1f2937',
-    borderRadius: 10,
-    marginLeft: 0,
-    paddingHorizontal: 12,
+    backgroundColor: isLight ? '#ffffff' : '#000000',
+    borderWidth: 1, borderColor: isLight ? '#d1d5db' : '#1f2937',
+    borderRadius: 10, marginLeft: 0, paddingHorizontal: 12,
   },
   addContactBtn: {
-    backgroundColor: '#facc15',
-    borderRadius: 10,
-    paddingVertical: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    marginTop: 4,
+    backgroundColor: '#facc15', borderRadius: 10, paddingVertical: 10,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 4,
   },
   addContactBtnText: { color: '#000000', fontWeight: '700', fontSize: 14 },
 });

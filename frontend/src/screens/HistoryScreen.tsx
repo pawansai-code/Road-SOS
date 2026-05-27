@@ -2,6 +2,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, FlatList, StatusBar, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+import { useColorScheme } from 'nativewind';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
@@ -9,6 +11,8 @@ import { clearHistory, fetchSOSHistory } from '../store/slices/sosSlice';
 
 export default function HistoryScreen() {
   const navigation = useNavigation();
+  const { t } = useTranslation();
+  const { colorScheme } = useColorScheme();
   const dispatch = useAppDispatch();
   const history = useAppSelector((state) => state.sos.history);
 
@@ -18,12 +22,12 @@ export default function HistoryScreen() {
 
   const handleClearHistory = () => {
     Alert.alert(
-      "Clear History",
-      "Are you sure you want to clear your SOS history?",
+      t("clearHistory"),
+      t("clearHistoryConfirm"),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("cancel"), style: "cancel" },
         { 
-          text: "Clear", 
+          text: t("clear"), 
           style: "destructive",
           onPress: () => dispatch(clearHistory()) 
         }
@@ -44,44 +48,44 @@ export default function HistoryScreen() {
     });
 
     return (
-      <View className="bg-gray-900 border border-gray-800 rounded-2xl p-4 mb-4 flex-row items-center shadow-lg">
+      <View className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 mb-4 flex-row items-center shadow-lg">
         <View className="w-12 h-12 rounded-full bg-red-500/20 items-center justify-center mr-4 border border-red-500/30">
           <MaterialIcons name="emergency" size={24} color="#ef4444" />
         </View>
         <View className="flex-1">
-          <Text className="text-white font-bold text-base mb-1">{item.eventType}</Text>
+          <Text className="text-gray-900 dark:text-white font-bold text-base mb-1">{item.eventType}</Text>
           <View className="flex-row items-center">
             <MaterialIcons name="event" size={14} color="#9ca3af" />
-            <Text className="text-gray-400 text-xs ml-1 mr-3">{formattedDate}</Text>
+            <Text className="text-gray-600 dark:text-gray-400 text-xs ml-1 mr-3">{formattedDate}</Text>
             <MaterialIcons name="access-time" size={14} color="#9ca3af" />
-            <Text className="text-gray-400 text-xs ml-1">{formattedTime}</Text>
+            <Text className="text-gray-600 dark:text-gray-400 text-xs ml-1">{formattedTime}</Text>
           </View>
         </View>
         <View className="bg-red-500/10 px-3 py-1 rounded-full border border-red-500/20">
-          <Text className="text-red-400 text-[10px] font-bold uppercase tracking-wider">Triggered</Text>
+          <Text className="text-red-400 text-[10px] font-bold uppercase tracking-wider">{t("triggered")}</Text>
         </View>
       </View>
     );
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-black">
-      <StatusBar barStyle="light-content" backgroundColor="#000000" />
+    <SafeAreaView className="flex-1 bg-gray-100 dark:bg-black">
+      <StatusBar barStyle={colorScheme === "dark" ? "light-content" : "dark-content"} backgroundColor={colorScheme === "dark" ? "#000000" : "#f3f4f6"} />
       
       {/* Header */}
-      <View className="flex-row items-center justify-between px-4 py-4 bg-black border-b border-gray-900">
+      <View className="flex-row items-center justify-between px-4 py-4 bg-gray-100 dark:bg-black border-b border-gray-300 dark:border-gray-900">
         <TouchableOpacity 
           onPress={() => navigation.goBack()}
-          className="w-10 h-10 items-center justify-center rounded-full bg-gray-900"
+          className="w-10 h-10 items-center justify-center rounded-full bg-white dark:bg-gray-900"
         >
-          <MaterialIcons name="arrow-back" size={24} color="#facc15" />
+          <MaterialIcons name="arrow-back" size={24} color={colorScheme === "dark" ? "#facc15" : "#eab308"} />
         </TouchableOpacity>
         
-        <Text className="text-white text-lg font-bold">SOS History</Text>
+        <Text className="text-gray-900 dark:text-white text-lg font-bold">{t("sosHistory")}</Text>
         
         <TouchableOpacity 
           onPress={handleClearHistory}
-          className="w-10 h-10 items-center justify-center rounded-full bg-gray-900"
+          className="w-10 h-10 items-center justify-center rounded-full bg-white dark:bg-gray-900"
           disabled={history.length === 0}
         >
           <MaterialIcons name="delete-outline" size={22} color={history.length === 0 ? "#4b5563" : "#ef4444"} />
@@ -100,12 +104,12 @@ export default function HistoryScreen() {
           />
         ) : (
           <View className="flex-1 items-center justify-center">
-            <View className="w-24 h-24 rounded-full bg-gray-900 items-center justify-center mb-6 border border-gray-800">
+            <View className="w-24 h-24 rounded-full bg-white dark:bg-gray-900 items-center justify-center mb-6 border border-gray-200 dark:border-gray-800">
               <MaterialIcons name="history" size={48} color="#4b5563" />
             </View>
-            <Text className="text-white text-lg font-bold mb-2">No SOS History</Text>
-            <Text className="text-gray-400 text-center text-sm px-8">
-              You haven't triggered any emergency requests yet. Stay safe!
+            <Text className="text-gray-900 dark:text-white text-lg font-bold mb-2">{t("noSosHistory")}</Text>
+            <Text className="text-gray-600 dark:text-gray-400 text-center text-sm px-8">
+              {t("noSosHistoryDesc")}
             </Text>
           </View>
         )}

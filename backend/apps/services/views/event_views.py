@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from ..serializers.event_serializer import SOSEventLogSerializer
+from ..models.sos_event_logs import SOSEventLog
 
 class SOSEventLogView(APIView):
     def get_firebase_uid(self, request):

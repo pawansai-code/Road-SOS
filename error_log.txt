@@ -26,6 +26,39 @@ ROAD SOS - ERROR LOG & TROUBLESHOOTING GUIDE
   c) To rebuild: stop the server, run `npx expo prebuild` (if not done already), and run `npx expo run:android` to compile the actual Android APK with the new native code included.
 
 
+1. ERROR [ReferenceError: Property 'colorScheme' doesn't exist]
+=======================================================
+- Context: Encountered after integrating NativeWind and light/dark mode themes.
+- Root Cause: The `colorScheme` property was being destructured or referenced outside of the functional component's scope (e.g., inside static StyleSheet declarations or exported styles outside the component body). React Hooks can only be used inside the body of a functional component.
+- Resolution: Restructured the UI components to use dynamic style generation. Created helper functions (e.g., `getStyles(isLight)`) inside or called from within the component body to pass the current theme state accurately.
+
+=======================================================
+2. error TS1145: '{' or JSX element expected (Syntax Error)
+=======================================================
+- Context: Encountered during the multilingual integration phase in `ProfileScreen.tsx`.
+- Root Cause: When substituting raw string placeholders with translation functions, the syntax was incorrectly written as `placeholder=t("key")` instead of wrapping the JavaScript expression in curly braces as required by JSX.
+- Resolution: Corrected all occurrences to properly enclose the function calls: `placeholder={t("key")}`.
+
+=======================================================
+3. SOS Button Overflow & Layout Breakage (Tamil/Malayalam)
+=======================================================
+- Context: Encountered when switching the application language to Tamil or Malayalam.
+- Root Cause: The translated strings for "SOS" or emergency prompts were significantly longer than their English counterparts. The UI components had fixed dimensions without textual constraints, causing the text to bleed out of the circular SOS button and warp the surrounding UI.
+- Resolution: Applied `adjustsFontSizeToFit={true}` and restricted the text with `numberOfLines={1}` on critical elements. This forces the font to dynamically scale down instead of breaking the layout bounds.
+
+=======================================================
+4. TS2769: No overload matches this call (i18next Initialization)
+=======================================================
+- Context: Encountered while setting up the `i18next` configuration for React Native.
+- Root Cause: The `i18next` library requires a specific compatibility flag when running in React Native environments, as it attempts to use JSON v4 format parsing which isn't natively supported by all React Native JS engines out of the box without the flag.
+- Resolution: Added `compatibilityJSON: 'v4'` to the `i18n.init()` configuration payload.
+
+=======================================================
+5. Expo Go App Crashing / "Components Messed Up"
+=======================================================
+- Context: The user reported the app wouldn't load or was totally corrupted visually in Expo Go.
+- Root Cause: A combination of the syntax errors mentioned above (#2) causing the Metro bundler to fail compilation silently, coupled with UI layout breaking due to language string lengths. The app was attempting to render a corrupted/stale JavaScript bundle.
+- Resolution: Cleared the syntax errors using TypeScript (`tsc --noEmit`), fixed the JSX props, and successfully recompiled the bundle for a smooth reload on the client's Expo Go.
 
 
 

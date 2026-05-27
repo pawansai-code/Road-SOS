@@ -12,6 +12,8 @@ import {
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
+import { useColorScheme } from 'nativewind';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Success'>;
@@ -19,6 +21,8 @@ type Props = {
 
 export default function SuccessScreen({ navigation }: Props) {
   const [timeLeft, setTimeLeft] = useState(30);
+  const { t } = useTranslation();
+  const { colorScheme } = useColorScheme();
 
   const scaleValue = useRef(new Animated.Value(0)).current;
   const opacityValue = useRef(new Animated.Value(0)).current;
@@ -57,9 +61,11 @@ export default function SuccessScreen({ navigation }: Props) {
     navigation.goBack();
   };
 
+  const isLight = colorScheme === 'light';
+
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#000000" />
+    <SafeAreaView style={[styles.container, isLight && { backgroundColor: '#f3f4f6' }]}>
+      <StatusBar barStyle={isLight ? "dark-content" : "light-content"} backgroundColor={isLight ? "#f3f4f6" : "#000000"} />
 
       <Animated.View
         style={[
@@ -75,27 +81,24 @@ export default function SuccessScreen({ navigation }: Props) {
         </View>
 
         {/* Title */}
-        <Text style={styles.title}>Alert Sent!</Text>
+        <Text style={[styles.title, isLight && { color: '#111827' }]}>{t("alertSent")}</Text>
 
         {/* Body */}
-        <Text style={styles.body}>
-          Your SOS alert was successfully triggered. Authorities and your
-          emergency contacts have received your live location and medical
-          details.
+        <Text style={[styles.body, isLight && { color: '#4b5563' }]}>
+          {t("alertSentDesc")}
         </Text>
 
         {/* Timer card */}
-        <View style={styles.timerCard}>
+        <View style={[styles.timerCard, isLight && { backgroundColor: '#ffffff', borderColor: '#e5e7eb' }]}>
           <MaterialIcons name="timer" size={24} color="#facc15" />
-          <Text style={styles.timerText}>
-            This screen will close in{' '}
-            <Text style={styles.timerHighlight}>{timeLeft}s</Text>
+          <Text style={[styles.timerText, isLight && { color: '#6b7280' }]}>
+            {t("screenClosesIn")} <Text style={styles.timerHighlight}>{timeLeft}s</Text>
           </Text>
         </View>
 
         {/* Dismiss button */}
-        <TouchableOpacity style={styles.dismissBtn} onPress={handleDismiss} activeOpacity={0.75}>
-          <Text style={styles.dismissText}>Dismiss Now</Text>
+        <TouchableOpacity style={[styles.dismissBtn, isLight && { backgroundColor: '#ffffff', borderColor: '#d1d5db' }]} onPress={handleDismiss} activeOpacity={0.75}>
+          <Text style={[styles.dismissText, isLight && { color: '#111827' }]}>{t("dismissNow")}</Text>
         </TouchableOpacity>
       </Animated.View>
     </SafeAreaView>
@@ -156,6 +159,8 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: 'center',
     marginBottom: 32,
+    flexDirection: 'row',
+    justifyContent: 'center',
     gap: 8,
   },
   timerText: {
