@@ -1,6 +1,9 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 
-import { API_BASE_URL } from '../../config';
+// NOTE: This IP must match the computer running your PostgreSQL backend.
+// If using Android Emulator, change this to: 'http://10.0.2.2:8000/api'
+// If using Physical Device, ensure 192.168.43.71 is your exact Wi-Fi IPv4 address.
+const API_BASE_URL = 'http://192.168.43.149:8000/api';
 const DUMMY_UID = 'dummy_user_123';
 
 
@@ -16,14 +19,12 @@ interface UserState {
   profile: UserProfile | null;
   isLoading: boolean;
   error: string | null;
-  hasSeenTutorial: boolean;
 }
 
 const initialState: UserState = {
   profile: null,
   isLoading: false,
   error: null,
-  hasSeenTutorial: false,
 };
 
 // Fetch profile from backend (PostgreSQL)
@@ -115,9 +116,6 @@ export const userSlice = createSlice({
         };
       }
     },
-    setHasSeenTutorial: (state, action: PayloadAction<boolean>) => {
-      state.hasSeenTutorial = action.payload;
-    },
   },
   extraReducers: (builder) => {
     builder
@@ -165,6 +163,6 @@ export const userSlice = createSlice({
 },
 });
 
-export const { setProfileField, setHasSeenTutorial } = userSlice.actions;
+export const { setProfileField } = userSlice.actions;
 
 export default userSlice.reducer;
