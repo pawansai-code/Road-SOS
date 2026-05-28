@@ -16,9 +16,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.roadsos.app",
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "ROAD SOS needs access to your photo library to set a profile picture.",
-        "NSCameraUsageDescription": "ROAD SOS needs access to your camera to take a profile photo.",
-        "NSPhotoLibraryAddUsageDescription": "ROAD SOS needs permission to save photos."
+        "NSPhotoLibraryUsageDescription": "ARAN needs access to your photo library to set a profile picture.",
+        "NSCameraUsageDescription": "ARAN needs access to your camera to take a profile photo.",
+        "NSPhotoLibraryAddUsageDescription": "ARAN needs permission to save photos."
       }
     },
     "android": {
@@ -42,8 +42,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "ROAD SOS needs access to your photo library to set a profile picture.",
-          "cameraPermission": "ROAD SOS needs access to your camera to take a profile photo."
+          "photosPermission": "ARAN needs access to your photo library to set a profile picture.",
+          "cameraPermission": "ARAN needs access to your camera to take a profile photo."
         }
       ],
       [

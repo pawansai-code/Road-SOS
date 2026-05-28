@@ -76,7 +76,7 @@ export default function LoginScreen() {
             Welcome <Text className="text-yellow-400">Back</Text>
           </Text>
           <Text className="text-gray-400 text-base mt-2">
-            Sign in to continue to ROAD SOS
+            Sign in to continue to ARAN
           </Text>
         </View>
 

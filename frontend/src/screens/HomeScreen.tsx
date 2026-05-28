@@ -501,7 +501,7 @@ export default function HomeScreen() {
           </CopilotTouchableOpacity>
         </CopilotStep>
         <Text className="text-gray-900 dark:text-white text-xl font-bold tracking-wider">
-          {t("allInOneNumber").substring(0, 0)}ROAD <Text className="text-yellow-500 dark:text-yellow-400">SOS</Text>
+          {t("allInOneNumber").substring(0, 0)}AR<Text className="text-yellow-500 dark:text-yellow-400">AN</Text>
         </Text>
         <View className="flex-row items-center space-x-4 ml-4">
           <TouchableOpacity onPress={() => setShowLangModal(true)}>
@@ -545,12 +545,15 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          <View className="w-1/3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-4 justify-center">
+          <TouchableOpacity 
+            className="w-1/3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-4 justify-center"
+            onPress={() => Linking.openURL('tel:112')}
+          >
             <Text className="text-gray-900 dark:text-white font-bold mb-2">{t("dial112")}</Text>
             <Text className="text-gray-500 dark:text-gray-400 text-[10px] leading-4 border-l-2 border-yellow-400 pl-2">
               {t("oneAppForAll")}
             </Text>
-          </View>
+          </TouchableOpacity>
           </CopilotView>
         </CopilotStep>
 
@@ -605,7 +608,11 @@ export default function HomeScreen() {
               onPress={() => navigation.navigate("Profile")}
             />
           </CopilotStep>
-          <QuickAction icon="phone-in-talk" label={t("dial112")} />
+          <QuickAction 
+            icon="phone-in-talk" 
+            label={t("dial112")} 
+            onPress={() => Linking.openURL('tel:112')}
+          />
           <QuickAction icon="chat-bubble-outline" label={t("chatUs")} />
           <CopilotStep text="Quickly access live location tracking." order={4} name="trackMe">
             <CopilotQuickAction 

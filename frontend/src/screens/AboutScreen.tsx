@@ -79,9 +79,9 @@ export default function AboutScreen({ navigation }: Props) {
           style={[styles.textSection, { opacity: textOpacity, transform: [{ translateY: textTranslateY }] }]}
         >
           <Text style={styles.appName}>
-            ROAD <Text style={styles.appNameYellow}>SOS</Text>
+            AR<Text style={styles.appNameYellow}>AN</Text>
           </Text>
-          <Text style={styles.versionText}>{t("version")} 6.1.0</Text>
+          <Text style={styles.versionText}>{t("version")} 1.0.0</Text>
           <Text style={styles.description}>
             {t("appDescription")}
           </Text>
@@ -130,7 +130,7 @@ export default function AboutScreen({ navigation }: Props) {
             </View>
             <TouchableOpacity
               style={styles.emailBtn}
-              onPress={() => Linking.openURL('mailto:support@roadsos.com')}
+              onPress={() => Linking.openURL('mailto:support@aran.com')}
             >
               <Text style={styles.emailBtnText}>{t("emailUs")}</Text>
             </TouchableOpacity>

@@ -76,7 +76,7 @@ export default function SignUpScreen() {
               Create <Text className="text-yellow-400">Account</Text>
             </Text>
             <Text className="text-gray-400 text-base mt-2">
-              Sign up to get started with ROAD SOS
+              Sign up to get started with ARAN
             </Text>
           </View>
 
