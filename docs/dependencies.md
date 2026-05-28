@@ -1,19 +1,56 @@
-[Folder Structure]
-Implement the following scalable, industry-standard directory structure within frontend/src/:
+# ROAD-SOS DEPENDENCIES LIST
 
-src/assets/ - Static files like images, custom fonts, etc.
-src/components/ - Reusable UI components (e.g., buttons, inputs).
-src/constants/ - Configuration, theme variables (colors, typography, spacing).
-src/navigation/ - React Navigation navigators (Stack, Tab, Drawer).
-src/screens/ - Complete UI views/screens.
-src/services/ - External API clients, third-party service logic.
-src/store/ - Global state management setup (e.g., Context API, Zustand, or Redux).
-src/types/ - Global TypeScript types and interfaces.
-src/utils/ - Helper functions and formatters.
+-----------------------------------------
+1. FRONTEND DEPENDENCIES (React Native / Expo)
+-----------------------------------------
+Core:
+- expo
+- react
+- react-native
+
+Navigation:
+- @react-navigation/native
+- @react-navigation/native-stack
+- react-native-screens
+- react-native-safe-area-context
+
+Styling & UI:
+- nativewind
+- tailwindcss (dev dependency)
+- react-native-maps
+- @expo/vector-icons
+- react-native-copilot
+
+State Management & API:
+- @reduxjs/toolkit
+- react-redux
+- axios
+
+Native Device Features & Storage:
+- expo-location
+- expo-sms
+- expo-image-picker
+- @react-native-async-storage/async-storage
+
+Localization:
+- i18next
+- react-i18next
 
 
-[Dependencies]
-The following key dependencies and their purpose are used in this project:
+-----------------------------------------
+2. BACKEND DEPENDENCIES (Python / Django)
+-----------------------------------------
+Core Framework & API:
+- Django
+- djangorestframework
+
+Database:
+- psycopg2-binary (PostgreSQL adapter)
+
+Security & Environment:
+- python-dotenv
+- django-cors-headers
+
 
 # Core Framework
 - expo: The React Native framework for cross-platform app development.
@@ -50,33 +87,3 @@ The following key dependencies and their purpose are used in this project:
 - psycopg2-binary: PostgreSQL database adapter for Python.
 - python-dotenv: Environment variable management for secure secrets.
 - django-cors-headers: Handling Cross-Origin Resource Sharing (CORS) between Expo and Django.
-
-
-
-
-
-
-
-
-
-Step 1: Log in to Expo Run this command and follow the prompts to log in (or create an account if you don't have one):
-
-bash
-npx eas-cli login
-Step 2: Generate the Keystore & SHA-1 Once logged in, run this command to generate your Android credentials:
-
-bash
-npx eas-cli credentials
-It will ask you what platform you want to manage. Use your arrow keys to select android.
-It will ask you which build profile. Select development.
-It will ask if you want to generate a new Keystore. Press Y (Yes).
-Step 3: Copy the SHA-1 Once the Keystore is generated, the terminal will print out a bunch of details, including your SHA-1 Fingerprint.
-
-Copy that SHA-1 fingerprint.
-Go to your Firebase Console > Project Settings > General > Your Apps (Android).
-Click "Add fingerprint" and paste the SHA-1 key there.
-Download the updated google-services.json file and replace the one currently in your frontend folder with the new one.
-Once you've done that, let me know, and I will show you how to start the EAS Development Build on your phone!
-
-eas.json
-1:21 PM
