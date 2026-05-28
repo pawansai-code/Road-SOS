@@ -1,17 +1,18 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 
-// Hardcoding for MVP. Ideally imported from a shared config.
-const API_BASE_URL = 'http://192.168.43.149:8000/api';
-const DUMMY_UID = 'dummy_user_123';
+import { API_BASE_URL } from '../../config';
+import type { RootState } from '../index';
 
 export const logSOSEventToBackend = createAsyncThunk(
   'sos/logSOSEventToBackend',
-  async (eventType: string, { rejectWithValue }) => {
+  async (eventType: string, { getState, rejectWithValue }) => {
+    const state = getState() as RootState;
+    const uid = state.auth.firebaseUid || 'dummy_user_123';
     try {
       const response = await fetch(`${API_BASE_URL}/services/sos-event/`, {
         method: 'POST',
         headers: {
-          'X-Firebase-Uid': DUMMY_UID,
+          'X-Firebase-Uid': uid,
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
@@ -25,6 +26,30 @@ export const logSOSEventToBackend = createAsyncThunk(
       return await response.json();
     } catch (error: any) {
       return rejectWithValue(error.message || 'Failed to save SOS event to backend database');
+    }
+  }
+);
+
+export const fetchSOSHistory = createAsyncThunk(
+  'sos/fetchSOSHistory',
+  async (_, { getState, rejectWithValue }) => {
+    const state = getState() as RootState;
+    const uid = state.auth.firebaseUid || 'dummy_user_123';
+    try {
+      const response = await fetch(`${API_BASE_URL}/services/sos-event/`, {
+        method: 'GET',
+        headers: {
+          'X-Firebase-Uid': uid,
+          'Accept': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch SOS history (Status ${response.status})`);
+      }
+      return await response.json();
+    } catch (error: any) {
+      return rejectWithValue(error.message || 'Failed to fetch history');
     }
   }
 );
@@ -55,10 +80,7 @@ const initialState: SOSState = {
   history: [], // Pre-populate with some mock data or leave empty. Let's start with a few mock items so the UI looks good immediately.
 };
 
-const mockHistory: SOSHistoryEvent[] = [
-  { id: '1', eventType: 'General Emergency', timestamp: new Date(Date.now() - 86400000 * 2).toISOString() }, // 2 days ago
-  { id: '2', eventType: 'Medical Assistance', timestamp: new Date(Date.now() - 86400000 * 5).toISOString() }, // 5 days ago
-];
+const mockHistory: SOSHistoryEvent[] = [];
 
 initialState.history = mockHistory;
 
@@ -91,6 +113,16 @@ const sosSlice = createSlice({
       state.history = [];
     }
   },
+  extraReducers: (builder) => {
+    builder.addCase(fetchSOSHistory.fulfilled, (state, action) => {
+      // Map backend format to frontend SOSHistoryEvent
+      state.history = action.payload.map((item: any) => ({
+        id: item.id.toString(),
+        eventType: item.event_type,
+        timestamp: item.created_at,
+      }));
+    });
+  }
 });
 
 export const { triggerSOS, cancelSOS, updateLocation, clearHistory } = sosSlice.actions;

@@ -1,0 +1,40 @@
+
+{
+  "project_info": {
+    "project_number": "476256496723",
+    "project_id": "road-sos-3b424",
+    "storage_bucket": "road-sos-3b424.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:476256496723:android:3568821dd69219fbcfeaa6",
+        "android_client_info": {
+          "package_name": "com.aran.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "476256496723-tqtfpv8u8h121gva2i4odbcu0aesfqmp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBaMOj5RSYj7Qdb0xEHi70IjdsUbSNJvgE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "476256496723-tqtfpv8u8h121gva2i4odbcu0aesfqmp.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

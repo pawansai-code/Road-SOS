@@ -1,10 +1,7 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 
-// NOTE: This IP must match the computer running your PostgreSQL backend.
-// If using Android Emulator, change this to: 'http://10.0.2.2:8000/api'
-// If using Physical Device, ensure 192.168.43.71 is your exact Wi-Fi IPv4 address.
-const API_BASE_URL = 'http://192.168.43.149:8000/api';
-const DUMMY_UID = 'dummy_user_123';
+import { API_BASE_URL } from '../../config';
+import type { RootState } from '../index';
 
 
 export interface UserProfile {
@@ -19,23 +16,27 @@ interface UserState {
   profile: UserProfile | null;
   isLoading: boolean;
   error: string | null;
+  hasSeenTutorial: boolean;
 }
 
 const initialState: UserState = {
   profile: null,
   isLoading: false,
   error: null,
+  hasSeenTutorial: false,
 };
 
 // Fetch profile from backend (PostgreSQL)
 export const fetchProfile = createAsyncThunk(
   'user/fetchProfile',
-  async (_, { rejectWithValue }) => {
+  async (_, { getState, rejectWithValue }) => {
+    const state = getState() as RootState;
+    const uid = state.auth.firebaseUid || 'dummy_user_123';
     try {
       const response = await fetch(`${API_BASE_URL}/users/profile/`, {
         method: 'GET',
         headers: {
-          'X-Firebase-Uid': DUMMY_UID,
+          'X-Firebase-Uid': uid,
           'Accept': 'application/json',
         },
       });
@@ -57,12 +58,14 @@ export const fetchProfile = createAsyncThunk(
 // Update profile on backend (PostgreSQL)
 export const updateProfile = createAsyncThunk(
   'user/updateProfile',
-  async (profileData: UserProfile, { rejectWithValue }) => {
+  async (profileData: UserProfile, { getState, rejectWithValue }) => {
+    const state = getState() as RootState;
+    const uid = state.auth.firebaseUid || 'dummy_user_123';
     try {
       const response = await fetch(`${API_BASE_URL}/users/profile/`, {
         method: 'PUT',
         headers: {
-          'X-Firebase-Uid': DUMMY_UID,
+          'X-Firebase-Uid': uid,
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
@@ -116,6 +119,9 @@ export const userSlice = createSlice({
         };
       }
     },
+    setHasSeenTutorial: (state, action: PayloadAction<boolean>) => {
+      state.hasSeenTutorial = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -163,6 +169,6 @@ export const userSlice = createSlice({
 },
 });
 
-export const { setProfileField } = userSlice.actions;
+export const { setProfileField, setHasSeenTutorial } = userSlice.actions;
 
 export default userSlice.reducer;
