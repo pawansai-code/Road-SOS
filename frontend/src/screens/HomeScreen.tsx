@@ -32,41 +32,57 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/AppNavigator";
-import axios from 'axios';
-import { CopilotStep, walkthroughable, useCopilot } from 'react-native-copilot';
+import axios from "axios";
+import { CopilotStep, walkthroughable, useCopilot } from "react-native-copilot";
+import { checkNetworkStatus } from "../features/offline/services/networkService";
+import { saveOfflineSOS } from "../features/offline/services/offlineStorageService";
+import { useNetworkStatus } from "../features/offline/hooks/useNetworkStatus";
 
 const CopilotView = walkthroughable(View);
 const CopilotTouchableOpacity = walkthroughable(TouchableOpacity);
 
-const QuickAction = React.memo(React.forwardRef(({
-  icon,
-  label,
-  isSOS = false,
-  onPress,
-  copilot
-}: any, ref: any) => {
-  const { colorScheme } = useColorScheme();
-  return (
-  <TouchableOpacity ref={ref} className="w-[23%] min-h-[80px] items-center mb-6" onPress={onPress} {...copilot}>
-    <View
-      className={`w-14 h-14 rounded-full items-center justify-center mb-2 shadow-sm ${isSOS ? "bg-red-600" : "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800"}`}
-    >
-      {isSOS ? (
-        <Text className="text-gray-900 dark:text-white font-black text-sm">SOS</Text>
-      ) : (
-        <MaterialIcons name={icon} size={28} color={colorScheme === "dark" ? "#facc15" : "#eab308"} />
-      )}
-    </View>
-    <Text
-      className="text-gray-700 dark:text-gray-300 text-[11px] text-center font-bold mt-1"
-      numberOfLines={2}
-      adjustsFontSizeToFit={true}
-    >
-      {label}
-    </Text>
-  </TouchableOpacity>
-  );
-}));
+const QuickAction = React.memo(
+  React.forwardRef(
+    ({ icon, label, isSOS = false, onPress, copilot }: any, ref: any) => {
+      const { colorScheme } = useColorScheme();
+      return (
+        <TouchableOpacity
+          ref={ref}
+          className="w-[23%] min-h-[80px] items-center mb-6"
+          onPress={onPress}
+          {...copilot}
+        >
+          <View
+            className={`w-14 h-14 rounded-full items-center justify-center mb-2 shadow-sm ${
+              isSOS
+                ? "bg-red-600"
+                : "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800"
+            }`}
+          >
+            {isSOS ? (
+              <Text className="text-gray-900 dark:text-white font-black text-sm">
+                SOS
+              </Text>
+            ) : (
+              <MaterialIcons
+                name={icon}
+                size={28}
+                color={colorScheme === "dark" ? "#facc15" : "#eab308"}
+              />
+            )}
+          </View>
+          <Text
+            className="text-gray-700 dark:text-gray-300 text-[11px] text-center font-bold mt-1"
+            numberOfLines={2}
+            adjustsFontSizeToFit={true}
+          >
+            {label}
+          </Text>
+        </TouchableOpacity>
+      );
+    },
+  ),
+);
 const CopilotQuickAction = walkthroughable(QuickAction);
 
 export default function HomeScreen() {
@@ -74,12 +90,12 @@ export default function HomeScreen() {
   const { colorScheme, toggleColorScheme } = useColorScheme();
   const [showLangModal, setShowLangModal] = React.useState(false);
   const languages = [
-    { code: 'en', label: 'English' },
-    { code: 'ta', label: 'தமிழ்' },
-    { code: 'te', label: 'తెలుగు' },
-    { code: 'hi', label: 'हिंदी' },
-    { code: 'ml', label: 'മലയാളം' },
-    { code: 'kn', label: 'ಕನ್ನಡ' }
+    { code: "en", label: "English" },
+    { code: "ta", label: "தமிழ்" },
+    { code: "te", label: "తెలుగు" },
+    { code: "hi", label: "हिंदी" },
+    { code: "ml", label: "മലയാളം" },
+    { code: "kn", label: "ಕನ್ನಡ" },
   ];
   const changeLanguage = (code: string) => {
     i18n.changeLanguage(code);
@@ -102,7 +118,11 @@ export default function HomeScreen() {
     React.useState<Location.LocationObject | null>(null);
   const [locationError, setLocationError] = React.useState<string | null>(null);
   const [selectedService, setSelectedService] = React.useState("POLICE");
-  const [currentLocation, setCurrentLocation] = React.useState(t("fetchingLocation"));
+  const [currentLocation, setCurrentLocation] = React.useState(
+    t("fetchingLocation"),
+  );
+  // Tracks current internet connectivity status
+  const isOnline = useNetworkStatus();
 
   const { start, copilotEvents } = useCopilot();
 
@@ -144,18 +164,22 @@ export default function HomeScreen() {
         try {
           const geocode = await Location.reverseGeocodeAsync({
             latitude: loc.coords.latitude,
-            longitude: loc.coords.longitude
+            longitude: loc.coords.longitude,
           });
           if (geocode && geocode.length > 0) {
-             const addr = geocode[0];
-             // Combine street and city, filtering out nulls
-             const parts = [addr.name || addr.street, addr.city || addr.subregion, addr.region].filter(Boolean);
-             setCurrentLocation(parts.join(', ') || t("locationAcquired"));
+            const addr = geocode[0];
+            // Combine street and city, filtering out nulls
+            const parts = [
+              addr.name || addr.street,
+              addr.city || addr.subregion,
+              addr.region,
+            ].filter(Boolean);
+            setCurrentLocation(parts.join(", ") || t("locationAcquired"));
           } else {
-             setCurrentLocation(t("locationAcquired"));
+            setCurrentLocation(t("locationAcquired"));
           }
-        } catch(geoErr) {
-           setCurrentLocation(t("locationAcquired"));
+        } catch (geoErr) {
+          setCurrentLocation(t("locationAcquired"));
         }
       } catch (e) {
         setLocationError(t("locationDenied"));
@@ -176,22 +200,25 @@ export default function HomeScreen() {
             Linking.openURL(`tel:${contact.phone_number}`).catch((err) =>
               console.log("Error opening dialer:", err),
             );
-          }
+          },
         },
         {
           text: "Send SMS",
           onPress: async () => {
             dispatch(triggerSOS(contact.contact_name));
             dispatch(logSOSEventToBackend(contact.contact_name));
-            
+
             let activeLoc = location;
             if (!activeLoc?.coords) {
               try {
-                let { status } = await Location.requestForegroundPermissionsAsync();
+                let { status } =
+                  await Location.requestForegroundPermissionsAsync();
                 if (status === "granted") {
                   activeLoc = await Location.getLastKnownPositionAsync();
                   if (!activeLoc?.coords) {
-                    activeLoc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+                    activeLoc = await Location.getCurrentPositionAsync({
+                      accuracy: Location.Accuracy.Balanced,
+                    });
                   }
                   setLocation(activeLoc);
                 }
@@ -208,7 +235,9 @@ export default function HomeScreen() {
               message += `\n\nLive Location: Unknown (Fetching failed or denied)`;
             }
             const separator = Platform.OS === "ios" ? "&" : "?";
-            const url = `sms:${contact.phone_number}${separator}body=${encodeURIComponent(message)}`;
+            const url = `sms:${
+              contact.phone_number
+            }${separator}body=${encodeURIComponent(message)}`;
             Linking.openURL(url).catch((err) =>
               console.log("Error opening SMS app:", err),
             );
@@ -309,40 +338,29 @@ export default function HomeScreen() {
   }, []);
 
   // BASE_URL imported from config.ts
-  const sendSOSRequest = async (overrideLoc?: Location.LocationObject | null) => {
+  const sendSOSRequest = async (
+    overrideLoc?: Location.LocationObject | null,
+  ) => {
     try {
       const activeLoc = overrideLoc || location;
       // Prepare data, fallback to 0.0 if location is missing so emergency request still goes through
       const sosData = {
         latitude: activeLoc?.coords?.latitude || 0.0,
         longitude: activeLoc?.coords?.longitude || 0.0,
-        service_type: selectedService
+        service_type: selectedService,
       };
-      console.log(
-        "SENDING TO BACKEND:",
-        sosData
-      );
+      console.log("SENDING TO BACKEND:", sosData);
       // Send to backend
-      const response =
-        await axios.post(
-          `${BASE_URL}/api/sos/trigger/`,
-          sosData
-        );
-      console.log(
-        "BACKEND RESPONSE:",
-        response.data
+      const response = await axios.post(
+        `${BASE_URL}/api/sos/trigger/`,
+        sosData,
       );
+      console.log("BACKEND RESPONSE:", response.data);
       // Map link returned from backend: response.data.map_link
       return true;
     } catch (error) {
-      console.log(
-        "SOS BACKEND ERROR:",
-        error
-      );
-      Alert.alert(
-        "Backend Error",
-        "Failed to send SOS"
-      );
+      console.log("SOS BACKEND ERROR:", error);
+      Alert.alert("Backend Error", "Failed to send SOS");
       return false;
     }
   };
@@ -376,14 +394,17 @@ export default function HomeScreen() {
           if (!activeLoc?.coords) {
             try {
               // Request permissions again just in case it was denied previously
-              let { status } = await Location.requestForegroundPermissionsAsync();
+              let { status } =
+                await Location.requestForegroundPermissionsAsync();
               if (status === "granted") {
                 // Try to get last known position first (much faster, less likely to hang)
                 activeLoc = await Location.getLastKnownPositionAsync();
-                
+
                 // If no last known position, force a fresh fetch
                 if (!activeLoc?.coords) {
-                  activeLoc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+                  activeLoc = await Location.getCurrentPositionAsync({
+                    accuracy: Location.Accuracy.Balanced,
+                  });
                 }
                 setLocation(activeLoc);
                 setLocationError(null);
@@ -394,14 +415,57 @@ export default function HomeScreen() {
               console.log("Failed to fetch fresh location", err);
             }
           }
+          // Check current internet connectivity status
+          const isOnline = await checkNetworkStatus();
+          // If internet is unavailable, activate offline SOS flow
+          if (!isOnline) {
+            const isAvailable = await SMS.isAvailableAsync();
+
+            if (isAvailable) {
+               // Prepare emergency contact numbers including national helpline
+              const numbers = [
+                "112",
+                ...contacts.map((c: any) => c.phone_number),
+              ];
+
+              // Default offline emergency message
+              let message =
+                "🚨 OFFLINE EMERGENCY SOS 🚨\nI need immediate assistance!";
+
+               // Attach Google Maps live location if coordinates exist
+              if (activeLoc?.coords) {
+                message += `\n\nLive Location: https://maps.google.com/?q=${activeLoc.coords.latitude},${activeLoc.coords.longitude}`;
+              } else {
+                message += `\n\nLocation unavailable`;
+              }
+              // Open SMS composer and send emergency alert
+              await SMS.sendSMSAsync(numbers, message);
+            }
+
+            // Store offline SOS incident locally for future sync
+            await saveOfflineSOS({
+              latitude: activeLoc?.coords?.latitude,
+              longitude: activeLoc?.coords?.longitude,
+              service_type: selectedService,
+            });
+
+            // Navigate user to success confirmation screen
+            navigation.navigate("Success");
+
+            return;
+          }
 
           //send data to backend and trigger SOS
           const success = await sendSOSRequest(activeLoc);
 
           const isAvailable = await SMS.isAvailableAsync();
           if (isAvailable) {
-            const numbers = ["112", ...contacts.map((c: any) => c.phone_number)];
-            let message = smsTemplate || "🚨 EMERGENCY SOS 🚨 I need immediate assistance!";
+            const numbers = [
+              "112",
+              ...contacts.map((c: any) => c.phone_number),
+            ];
+            let message =
+              smsTemplate || "🚨 EMERGENCY SOS 🚨 I need immediate assistance!";
             if (activeLoc?.coords) {
               message += `\n\nLive Location: https://maps.google.com/?q=${activeLoc.coords.latitude},${activeLoc.coords.longitude}`;
             } else {
@@ -427,13 +491,13 @@ export default function HomeScreen() {
     dispatch(triggerSOS(serviceName));
     // Sync to backend DB
     dispatch(logSOSEventToBackend(serviceName));
-    
+
     // Route to actual nearest service or dummy number for MVP
     Linking.openURL(`tel:${phoneNumber}`).catch((err) =>
       console.log("Error opening dialer:", err),
     );
   };
-  //selected service component with dynamic styling based on selection 
+  //selected service component with dynamic styling based on selection
   const EmergencyService = ({
     icon,
     label,
@@ -492,26 +556,46 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-100 dark:bg-black">
-      <StatusBar barStyle={colorScheme === "dark" ? "light-content" : "dark-content"} backgroundColor={colorScheme === "dark" ? "#000000" : "#ffffff"} />
+      <StatusBar
+        barStyle={colorScheme === "dark" ? "light-content" : "dark-content"}
+        backgroundColor={colorScheme === "dark" ? "#000000" : "#ffffff"}
+      />
       {/* Header */}
       <View className="flex-row items-center justify-between px-4 py-3 bg-white dark:bg-black">
         <CopilotStep text={t("menu")} order={5} name="menu">
           <CopilotTouchableOpacity onPress={() => toggleSidebar(true)}>
-            <MaterialIcons name="menu" size={28} color={colorScheme === "dark" ? "#facc15" : "#eab308"} />
+            <MaterialIcons
+              name="menu"
+              size={28}
+              color={colorScheme === "dark" ? "#facc15" : "#eab308"}
+            />
           </CopilotTouchableOpacity>
         </CopilotStep>
         <Text className="text-gray-900 dark:text-white text-xl font-bold tracking-wider">
-          {t("allInOneNumber").substring(0, 0)}ROAD <Text className="text-yellow-500 dark:text-yellow-400">SOS</Text>
+          {t("allInOneNumber").substring(0, 0)}ROAD{" "}
+          <Text className="text-yellow-500 dark:text-yellow-400">SOS</Text>
         </Text>
         <View className="flex-row items-center space-x-4 ml-4">
           <TouchableOpacity onPress={() => setShowLangModal(true)}>
-            <MaterialIcons name="translate" size={26} color={colorScheme === 'dark' ? '#facc15' : '#4b5563'} />
+            <MaterialIcons
+              name="translate"
+              size={26}
+              color={colorScheme === "dark" ? "#facc15" : "#4b5563"}
+            />
           </TouchableOpacity>
           <TouchableOpacity onPress={toggleColorScheme} className="ml-4">
-            <MaterialIcons name={colorScheme === 'dark' ? 'light-mode' : 'dark-mode'} size={26} color={colorScheme === 'dark' ? '#facc15' : '#4b5563'} />
+            <MaterialIcons
+              name={colorScheme === "dark" ? "light-mode" : "dark-mode"}
+              size={26}
+              color={colorScheme === "dark" ? "#facc15" : "#4b5563"}
+            />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => start()} className="ml-4">
-            <MaterialIcons name="info-outline" size={26} color={colorScheme === 'dark' ? '#facc15' : '#4b5563'} />
+            <MaterialIcons
+              name="info-outline"
+              size={26}
+              color={colorScheme === "dark" ? "#facc15" : "#4b5563"}
+            />
           </TouchableOpacity>
         </View>
       </View>
@@ -520,85 +604,124 @@ export default function HomeScreen() {
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
       >
+        {!isOnline && (
+          <View
+            style={{
+              backgroundColor: "#ff4444",
+              padding: 10,
+              borderRadius: 12,
+              marginTop: 12,
+              marginBottom: 12,
+              alignItems: "center",
+            }}
+          >
+            <Text style={{ color: "white", fontWeight: "bold" }}>
+              ⚠️ OFFLINE MODE ACTIVE
+            </Text>
+          </View>
+        )}
         {/* Main Banner (Now positioned directly at the top) */}
-        <CopilotStep text="Your all-in-one emergency hub. Access volunteers, live tracking, and more." order={2} name="banner">
-          <CopilotView style={{ flexDirection: 'row', marginTop: 16, marginBottom: 24 }}>
-          <View className="flex-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-5 mr-3 overflow-hidden justify-center relative">
-            <View className="absolute top-0 right-0 w-32 h-32 bg-yellow-400/5 rounded-full -mr-10 -mt-10" />
-            <Text className="text-gray-900 dark:text-white text-sm font-medium leading-5 mb-1 z-10">
-              {t("allInOneNumber")}
-            </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-xs leading-4 z-10 w-2/3">
-              {t("emergencyServicesInOnePlace")}
-            </Text>
-            <View className="absolute right-4 top-1/2 -translate-y-1/2 z-0">
-              <Text
-                className="text-5xl font-black text-yellow-400 tracking-tighter"
-                style={{
-                  textShadowColor: "rgba(250, 204, 21, 0.3)",
-                  textShadowOffset: { width: 0, height: 4 },
-                  textShadowRadius: 8,
-                }}
-              >
-                112
+        <CopilotStep
+          text="Your all-in-one emergency hub. Access volunteers, live tracking, and more."
+          order={2}
+          name="banner"
+        >
+          <CopilotView
+            style={{ flexDirection: "row", marginTop: 16, marginBottom: 24 }}
+          >
+            <View className="flex-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-5 mr-3 overflow-hidden justify-center relative">
+              <View className="absolute top-0 right-0 w-32 h-32 bg-yellow-400/5 rounded-full -mr-10 -mt-10" />
+              <Text className="text-gray-900 dark:text-white text-sm font-medium leading-5 mb-1 z-10">
+                {t("allInOneNumber")}
+              </Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-xs leading-4 z-10 w-2/3">
+                {t("emergencyServicesInOnePlace")}
+              </Text>
+              <View className="absolute right-4 top-1/2 -translate-y-1/2 z-0">
+                <Text
+                  className="text-5xl font-black text-yellow-400 tracking-tighter"
+                  style={{
+                    textShadowColor: "rgba(250, 204, 21, 0.3)",
+                    textShadowOffset: { width: 0, height: 4 },
+                    textShadowRadius: 8,
+                  }}
+                >
+                  112
+                </Text>
+              </View>
+            </View>
+
+            <View className="w-1/3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-4 justify-center">
+              <Text className="text-gray-900 dark:text-white font-bold mb-2">
+                {t("dial112")}
+              </Text>
+              <Text className="text-gray-500 dark:text-gray-400 text-[10px] leading-4 border-l-2 border-yellow-400 pl-2">
+                {t("oneAppForAll")}
               </Text>
             </View>
-          </View>
-
-          <View className="w-1/3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-4 justify-center">
-            <Text className="text-gray-900 dark:text-white font-bold mb-2">{t("dial112")}</Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-[10px] leading-4 border-l-2 border-yellow-400 pl-2">
-              {t("oneAppForAll")}
-            </Text>
-          </View>
           </CopilotView>
         </CopilotStep>
 
         {/* Massive Pulsing Centered SOS Button (Now repositioned below the 112 Banner) */}
         <View className="items-center justify-center my-6">
-          <CopilotStep text="Tap this massive button in emergencies to instantly send your location and alert your contacts/services." order={1} name="sos">
+          <CopilotStep
+            text="Tap this massive button in emergencies to instantly send your location and alert your contacts/services."
+            order={1}
+            name="sos"
+          >
             <CopilotTouchableOpacity
               onPress={handleSOSPress}
               activeOpacity={0.85}
-              style={{ alignItems: 'center', justifyContent: 'center' }}
+              style={{ alignItems: "center", justifyContent: "center" }}
             >
-            {/* Outer soft glowing ring with animated pulse */}
-            <Animated.View
-              style={{ transform: [{ scale: pulseScale }] }}
-              className={`w-52 h-52 rounded-full items-center justify-center ${buttonRingOuter}`}
-            >
-              {/* Middle structural ring */}
-              <View
-                className={`w-44 h-44 rounded-full items-center justify-center ${buttonRingMiddle}`}
+              {/* Outer soft glowing ring with animated pulse */}
+              <Animated.View
+                style={{ transform: [{ scale: pulseScale }] }}
+                className={`w-52 h-52 rounded-full items-center justify-center ${buttonRingOuter}`}
               >
-                {/* Core tactile emergency button */}
+                {/* Middle structural ring */}
                 <View
-                  className={`w-36 h-36 rounded-full items-center justify-center shadow-2xl ${buttonBg}`}
+                  className={`w-44 h-44 rounded-full items-center justify-center ${buttonRingMiddle}`}
                 >
-                  <Text 
-                    className="text-gray-900 dark:text-white font-black text-4xl tracking-widest text-center px-2 w-full"
-                    numberOfLines={1}
-                    adjustsFontSizeToFit={true}
+                  {/* Core tactile emergency button */}
+                  <View
+                    className={`w-36 h-36 rounded-full items-center justify-center shadow-2xl ${buttonBg}`}
                   >
-                    {buttonText}
-                  </Text>
-                  <Text 
-                    className="text-red-200 text-[9px] font-black tracking-widest mt-2 uppercase text-center px-2 w-full"
-                    numberOfLines={1}
-                    adjustsFontSizeToFit={true}
-                  >
-                    {buttonSubtext}
-                  </Text>
+                    <Text
+                      className="text-gray-900 dark:text-white font-black text-4xl tracking-widest text-center px-2 w-full"
+                      numberOfLines={1}
+                      adjustsFontSizeToFit={true}
+                    >
+                      {buttonText}
+                    </Text>
+                    <Text
+                      className="text-red-200 text-[9px] font-black tracking-widest mt-2 uppercase text-center px-2 w-full"
+                      numberOfLines={1}
+                      adjustsFontSizeToFit={true}
+                    >
+                      {buttonSubtext}
+                    </Text>
+                  </View>
                 </View>
-              </View>
-            </Animated.View>
+              </Animated.View>
             </CopilotTouchableOpacity>
           </CopilotStep>
         </View>
 
         {/* Quick Actions Grid */}
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 16 }}>
-          <CopilotStep text="Manage your emergency contacts and medical info in your Profile." order={6} name="profile">
+        <View
+          style={{
+            flexDirection: "row",
+            flexWrap: "wrap",
+            justifyContent: "space-between",
+            marginBottom: 16,
+          }}
+        >
+          <CopilotStep
+            text="Manage your emergency contacts and medical info in your Profile."
+            order={6}
+            name="profile"
+          >
             <CopilotQuickAction
               icon="person-outline"
               label={t("profile")}
@@ -607,63 +730,77 @@ export default function HomeScreen() {
           </CopilotStep>
           <QuickAction icon="phone-in-talk" label={t("dial112")} />
           <QuickAction icon="chat-bubble-outline" label={t("chatUs")} />
-          <CopilotStep text="Quickly access live location tracking." order={4} name="trackMe">
-            <CopilotQuickAction 
-              icon="my-location" 
-              label={t("trackMe")} 
+          <CopilotStep
+            text="Quickly access live location tracking."
+            order={4}
+            name="trackMe"
+          >
+            <CopilotQuickAction
+              icon="my-location"
+              label={t("trackMe")}
               onPress={() => navigation.navigate("LiveTracking")}
             />
           </CopilotStep>
         </View>
 
-
         {/* Contact Emergency Services */}
         <Text className="text-gray-900 dark:text-white font-bold text-lg mb-4">
           Emergency Services
         </Text>
-        <CopilotStep text="Directly contact Police, Fire, Medical, and other specific services with one tap." order={3} name="services">
-          <CopilotView style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 16 }}>
-          <EmergencyService
-            icon="local-police"
-            label={t("police")}
-            phoneNumber="9445401181"
-          />
-          <EmergencyService
-            icon="local-fire-department"
-            label={t("fire")}
-            phoneNumber="8124762504"
-          />
-          <EmergencyService
-            icon="local-hospital"
-            label={t("medical")}
-            phoneNumber="8838343939"
-          />
-          <EmergencyService
-            icon="storm"
-            label={t("disaster")}
-            phoneNumber="9043091519"
-          />
+        <CopilotStep
+          text="Directly contact Police, Fire, Medical, and other specific services with one tap."
+          order={3}
+          name="services"
+        >
+          <CopilotView
+            style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
+              justifyContent: "space-between",
+              marginBottom: 16,
+            }}
+          >
+            <EmergencyService
+              icon="local-police"
+              label={t("police")}
+              phoneNumber="9445401181"
+            />
+            <EmergencyService
+              icon="local-fire-department"
+              label={t("fire")}
+              phoneNumber="8124762504"
+            />
+            <EmergencyService
+              icon="local-hospital"
+              label={t("medical")}
+              phoneNumber="8838343939"
+            />
+            <EmergencyService
+              icon="storm"
+              label={t("disaster")}
+              phoneNumber="9043091519"
+            />
 
-          <EmergencyService
-            icon="woman"
-            label={t("woman")}
-            phoneNumber="9080269331"
-          />
-          <EmergencyService
-            icon="child-care"
-            label={t("child")}
-            phoneNumber="9677699624"
-          />
-          <EmergencyService
-            icon="elderly"
-            label={t("elderly")}
-            phoneNumber="1111111111"
-          />
-          <EmergencyService
-            icon="train"
-            label={t("railway")}
-            phoneNumber="9360067772"
-          />
+            <EmergencyService
+              icon="woman"
+              label={t("woman")}
+              phoneNumber="9080269331"
+            />
+            <EmergencyService
+              icon="child-care"
+              label={t("child")}
+              phoneNumber="9677699624"
+            />
+            <EmergencyService
+              icon="elderly"
+              label={t("elderly")}
+              phoneNumber="1111111111"
+            />
+            <EmergencyService
+              icon="train"
+              label={t("railway")}
+              phoneNumber="9360067772"
+            />
           </CopilotView>
         </CopilotStep>
 
@@ -702,33 +839,45 @@ export default function HomeScreen() {
             placeholderTextColor="#6b7280"
           />
           <TouchableOpacity>
-            <MaterialIcons name="mic" size={24} color={colorScheme === "dark" ? "#facc15" : "#eab308"} />
+            <MaterialIcons
+              name="mic"
+              size={24}
+              color={colorScheme === "dark" ? "#facc15" : "#eab308"}
+            />
           </TouchableOpacity>
         </View>
 
         {/* Location Banner */}
-        <View className={`flex-row items-center border rounded-2xl p-4 mb-4 ${
-          locationError 
-            ? "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900/50" 
-            : currentLocation === t("fetchingLocation") 
-              ? "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50" 
+        <View
+          className={`flex-row items-center border rounded-2xl p-4 mb-4 ${
+            locationError
+              ? "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900/50"
+              : currentLocation === t("fetchingLocation")
+              ? "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50"
               : "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900/50"
-        }`}>
-          <MaterialIcons 
-            name="location-on" 
-            size={24} 
-            color={locationError ? "#ef4444" : currentLocation === t("fetchingLocation") ? "#f59e0b" : "#10b981"} 
+          }`}
+        >
+          <MaterialIcons
+            name="location-on"
+            size={24}
+            color={
+              locationError
+                ? "#ef4444"
+                : currentLocation === t("fetchingLocation")
+                ? "#f59e0b"
+                : "#10b981"
+            }
           />
-          <Text className={`font-bold ml-2 flex-1 ${
-            locationError 
-              ? "text-red-700 dark:text-red-400" 
-              : currentLocation === t("fetchingLocation") 
-                ? "text-amber-700 dark:text-amber-400" 
+          <Text
+            className={`font-bold ml-2 flex-1 ${
+              locationError
+                ? "text-red-700 dark:text-red-400"
+                : currentLocation === t("fetchingLocation")
+                ? "text-amber-700 dark:text-amber-400"
                 : "text-green-700 dark:text-green-400"
-          }`}>
-            {locationError
-              ? t("locationDenied")
-              : currentLocation}
+            }`}
+          >
+            {locationError ? t("locationDenied") : currentLocation}
           </Text>
         </View>
 
@@ -742,7 +891,9 @@ export default function HomeScreen() {
               className="bg-white rounded-full px-4 py-2"
               onPress={() => Linking.openSettings()}
             >
-              <Text className="text-white dark:text-black text-xs font-bold">{t("settings")}</Text>
+              <Text className="text-white dark:text-black text-xs font-bold">
+                {t("settings")}
+              </Text>
             </TouchableOpacity>
           </View>
         )}
@@ -805,7 +956,11 @@ export default function HomeScreen() {
                   activeOpacity={0.8}
                   className="flex-row items-center py-3.5 px-4 bg-yellow-400/10 border-l-4 border-yellow-400 rounded-r-2xl mb-1.5"
                 >
-                  <MaterialIcons name="home" size={24} color={colorScheme === "dark" ? "#facc15" : "#eab308"} />
+                  <MaterialIcons
+                    name="home"
+                    size={24}
+                    color={colorScheme === "dark" ? "#facc15" : "#eab308"}
+                  />
                   <Text className="text-yellow-400 font-extrabold text-sm ml-4">
                     Home
                   </Text>
@@ -922,28 +1077,36 @@ export default function HomeScreen() {
           </Animated.View>
         </View>
       )}
-    
+
       {/* Language Modal */}
       <Modal visible={showLangModal} transparent animationType="fade">
         <View className="flex-1 bg-gray-100/60 dark:bg-black/60 justify-center items-center px-4">
           <View className="bg-white dark:bg-gray-900 w-full rounded-3xl p-6 border border-gray-200 dark:border-gray-800">
-            <Text className="text-gray-900 dark:text-white text-xl font-bold mb-4">Select Language</Text>
-            {languages.map(lang => (
+            <Text className="text-gray-900 dark:text-white text-xl font-bold mb-4">
+              Select Language
+            </Text>
+            {languages.map((lang) => (
               <TouchableOpacity
                 key={lang.code}
                 onPress={() => changeLanguage(lang.code)}
                 className="py-3 border-b border-gray-200 dark:border-gray-800"
               >
-                <Text className="text-gray-800 dark:text-gray-300 text-base">{lang.label}</Text>
+                <Text className="text-gray-800 dark:text-gray-300 text-base">
+                  {lang.label}
+                </Text>
               </TouchableOpacity>
             ))}
-            <TouchableOpacity onPress={() => setShowLangModal(false)} className="mt-4 py-3 bg-red-600 rounded-xl items-center">
-              <Text className="text-white dark:text-white font-bold">Cancel</Text>
+            <TouchableOpacity
+              onPress={() => setShowLangModal(false)}
+              className="mt-4 py-3 bg-red-600 rounded-xl items-center"
+            >
+              <Text className="text-white dark:text-white font-bold">
+                Cancel
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
-
     </SafeAreaView>
   );
 }
