@@ -1,6 +1,6 @@
 ROAD SOS - API ENDPOINTS FOR TESTING TEAM
 
-#General Configuration:
+General Configuration:
 - Authentication: Most endpoints expect a header of 'X-Firebase-Uid': 'dummy_user_123' (currently mocked for MVP).
 - Content-Type: application/json
 - Important Note: The frontend currently has IP addresses hardcoded for the API_BASE_URL (e.g., http://192.168.43.149:8000/api and http://192.168.43.71:8000). Ensure your local backend matches these or update the frontend Redux slices for testing.
