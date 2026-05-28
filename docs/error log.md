@@ -64,3 +64,8 @@
 * **Proposed Solutions:**
   * **Option A (Recommended for MVP):** Change the Django model to create a new table (`service_call_logs`) that matches the simple structure (firebase_uid, event_type, timestamp).
   * **Option B:** If `sos_event_logs` must be used, first create a dummy "Incident", use `CALL_TRIGGERED` as event_type, and save "POLICE" inside the `event_message` column.
+
+
+
+## backend server run -->  python manage.py runserver 0.0.0.0:8000
+ipconfig for ipv4 address based on that we need to change the last digits in the slices located in the frontend.
