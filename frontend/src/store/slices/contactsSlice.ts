@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 
 import { API_BASE_URL } from '../../config';
-const DUMMY_UID = 'dummy_user_123';
+import type { RootState } from '../index';
 
 export interface EmergencyContact {
   id: string;
@@ -27,11 +27,13 @@ const initialState: ContactsState = {
 
 export const fetchContacts = createAsyncThunk(
   'contacts/fetchContacts',
-  async (_, { rejectWithValue }) => {
+  async (_, { getState, rejectWithValue }) => {
+    const state = getState() as RootState;
+    const uid = state.auth.firebaseUid || 'dummy_user_123';
     try {
       const response = await fetch(`${API_BASE_URL}/contacts/`, {
         headers: {
-          'X-Firebase-Uid': DUMMY_UID,
+          'X-Firebase-Uid': uid,
           'Accept': 'application/json',
         },
       });
@@ -45,12 +47,14 @@ export const fetchContacts = createAsyncThunk(
 
 export const addContact = createAsyncThunk(
   'contacts/addContact',
-  async (contactData: { contact_name: string; relationship: string; phone_number: string }, { rejectWithValue }) => {
+  async (contactData: { contact_name: string; relationship: string; phone_number: string }, { getState, rejectWithValue }) => {
+    const state = getState() as RootState;
+    const uid = state.auth.firebaseUid || 'dummy_user_123';
     try {
       const response = await fetch(`${API_BASE_URL}/contacts/`, {
         method: 'POST',
         headers: {
-          'X-Firebase-Uid': DUMMY_UID,
+          'X-Firebase-Uid': uid,
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
@@ -69,12 +73,14 @@ export const addContact = createAsyncThunk(
 
 export const deleteContact = createAsyncThunk(
   'contacts/deleteContact',
-  async (contactId: string, { rejectWithValue }) => {
+  async (contactId: string, { getState, rejectWithValue }) => {
+    const state = getState() as RootState;
+    const uid = state.auth.firebaseUid || 'dummy_user_123';
     try {
       const response = await fetch(`${API_BASE_URL}/contacts/${contactId}/`, {
         method: 'DELETE',
         headers: {
-          'X-Firebase-Uid': DUMMY_UID,
+          'X-Firebase-Uid': uid,
         },
       });
       if (!response.ok) throw new Error('Failed to delete contact');
@@ -87,11 +93,13 @@ export const deleteContact = createAsyncThunk(
 
 export const fetchSmsTemplate = createAsyncThunk(
   'contacts/fetchSmsTemplate',
-  async (_, { rejectWithValue }) => {
+  async (_, { getState, rejectWithValue }) => {
+    const state = getState() as RootState;
+    const uid = state.auth.firebaseUid || 'dummy_user_123';
     try {
       const response = await fetch(`${API_BASE_URL}/contacts/sms-template/`, {
         headers: {
-          'X-Firebase-Uid': DUMMY_UID,
+          'X-Firebase-Uid': uid,
           'Accept': 'application/json',
         },
       });

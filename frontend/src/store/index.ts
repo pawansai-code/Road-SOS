@@ -2,12 +2,14 @@ import { configureStore } from '@reduxjs/toolkit';
 import sosReducer from './slices/sosSlice';
 import userReducer from './slices/userSlice';
 import contactsReducer from './slices/contactsSlice';
+import authReducer from './slices/authSlice';
 
 export const store = configureStore({
   reducer: {
     sos: sosReducer,
     user: userReducer,
     contacts: contactsReducer,
+    auth: authReducer,
   },
   // Adding middleware to ensure non-serializable checks don't slow down dev
   // if you plan to store complex objects (though it's best practice to keep state serializable)

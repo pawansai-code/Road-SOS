@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 
 import { API_BASE_URL } from '../../config';
-const DUMMY_UID = 'dummy_user_123';
+import type { RootState } from '../index';
 
 
 export interface UserProfile {
@@ -29,12 +29,14 @@ const initialState: UserState = {
 // Fetch profile from backend (PostgreSQL)
 export const fetchProfile = createAsyncThunk(
   'user/fetchProfile',
-  async (_, { rejectWithValue }) => {
+  async (_, { getState, rejectWithValue }) => {
+    const state = getState() as RootState;
+    const uid = state.auth.firebaseUid || 'dummy_user_123';
     try {
       const response = await fetch(`${API_BASE_URL}/users/profile/`, {
         method: 'GET',
         headers: {
-          'X-Firebase-Uid': DUMMY_UID,
+          'X-Firebase-Uid': uid,
           'Accept': 'application/json',
         },
       });
@@ -56,12 +58,14 @@ export const fetchProfile = createAsyncThunk(
 // Update profile on backend (PostgreSQL)
 export const updateProfile = createAsyncThunk(
   'user/updateProfile',
-  async (profileData: UserProfile, { rejectWithValue }) => {
+  async (profileData: UserProfile, { getState, rejectWithValue }) => {
+    const state = getState() as RootState;
+    const uid = state.auth.firebaseUid || 'dummy_user_123';
     try {
       const response = await fetch(`${API_BASE_URL}/users/profile/`, {
         method: 'PUT',
         headers: {
-          'X-Firebase-Uid': DUMMY_UID,
+          'X-Firebase-Uid': uid,
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },

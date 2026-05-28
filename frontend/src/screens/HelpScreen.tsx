@@ -119,14 +119,14 @@ export default function HelpScreen({ navigation }: Props) {
                   activeOpacity={0.8}
                   onPress={() => toggleExpand(item.id)}
                 >
-                  <View style={[styles.accordionIcon, isExpanded && styles.accordionIconActive]}>
+                  <View style={[styles.accordionIcon, isExpanded ? styles.accordionIconActive : undefined]}>
                     <MaterialIcons
                       name={item.icon as any}
                       size={20}
                       color={isExpanded ? '#000000' : (isLight ? '#eab308' : '#facc15')}
                     />
                   </View>
-                  <Text style={[styles.accordionTitle, isExpanded && styles.accordionTitleActive]}>
+                  <Text style={[styles.accordionTitle, isExpanded ? styles.accordionTitleActive : undefined]}>
                     {item.title}
                   </Text>
                   <MaterialIcons

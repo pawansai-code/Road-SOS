@@ -1,16 +1,18 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 
 import { API_BASE_URL } from '../../config';
-const DUMMY_UID = 'dummy_user_123';
+import type { RootState } from '../index';
 
 export const logSOSEventToBackend = createAsyncThunk(
   'sos/logSOSEventToBackend',
-  async (eventType: string, { rejectWithValue }) => {
+  async (eventType: string, { getState, rejectWithValue }) => {
+    const state = getState() as RootState;
+    const uid = state.auth.firebaseUid || 'dummy_user_123';
     try {
       const response = await fetch(`${API_BASE_URL}/services/sos-event/`, {
         method: 'POST',
         headers: {
-          'X-Firebase-Uid': DUMMY_UID,
+          'X-Firebase-Uid': uid,
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
@@ -30,12 +32,14 @@ export const logSOSEventToBackend = createAsyncThunk(
 
 export const fetchSOSHistory = createAsyncThunk(
   'sos/fetchSOSHistory',
-  async (_, { rejectWithValue }) => {
+  async (_, { getState, rejectWithValue }) => {
+    const state = getState() as RootState;
+    const uid = state.auth.firebaseUid || 'dummy_user_123';
     try {
       const response = await fetch(`${API_BASE_URL}/services/sos-event/`, {
         method: 'GET',
         headers: {
-          'X-Firebase-Uid': DUMMY_UID,
+          'X-Firebase-Uid': uid,
           'Accept': 'application/json',
         },
       });

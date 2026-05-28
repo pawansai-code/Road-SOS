@@ -60,7 +60,7 @@ export default function LiveTrackingScreen() {
             timeInterval: 5000, 
             distanceInterval: 5, 
           },
-          (newLocation) => {
+          (newLocation: Location.LocationObject) => {
             setLocation(newLocation);
             
             if (isTracking && mapRef.current) {
@@ -105,16 +105,16 @@ export default function LiveTrackingScreen() {
   const isLight = colorScheme === 'light';
 
   return (
-    <SafeAreaView style={[styles.container, isLight && { backgroundColor: '#f3f4f6' }]} edges={['top']}>
+    <SafeAreaView style={[styles.container, isLight ? { backgroundColor: '#f3f4f6' } : undefined]} edges={['top']}>
       {/* Header Overlay */}
       <View style={styles.header}>
         <TouchableOpacity 
-          style={[styles.backButton, isLight && { backgroundColor: 'rgba(255,255,255,0.8)' }]}
+          style={[styles.backButton, isLight ? { backgroundColor: 'rgba(255,255,255,0.8)' } : undefined]}
           onPress={() => navigation.goBack()}
         >
           <MaterialIcons name="arrow-back" size={24} color={isLight ? "#000" : "#fff"} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, isLight && { backgroundColor: 'rgba(255,255,255,0.8)', color: '#000' }]}>{t("liveTracking")}</Text>
+        <Text style={[styles.headerTitle, isLight ? { backgroundColor: 'rgba(255,255,255,0.8)', color: '#000' } : undefined]}>{t("liveTracking")}</Text>
         <View style={{width: 40}} /> 
       </View>
 
@@ -126,7 +126,7 @@ export default function LiveTrackingScreen() {
       ) : !location ? (
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color="#facc15" />
-          <Text style={[styles.loadingText, isLight && { color: '#000' }]}>{t("acquiringGPS")}</Text>
+          <Text style={[styles.loadingText, isLight ? { color: '#000' } : undefined]}>{t("acquiringGPS")}</Text>
         </View>
       ) : (
         <View style={styles.mapContainer}>
@@ -171,22 +171,22 @@ export default function LiveTrackingScreen() {
           )}
 
           {/* Bottom Info Panel */}
-          <View style={[styles.bottomPanel, isLight && { backgroundColor: '#ffffff', borderColor: '#e5e7eb' }]}>
+          <View style={[styles.bottomPanel, isLight ? { backgroundColor: '#ffffff', borderColor: '#e5e7eb' } : undefined]}>
             <View style={styles.infoRow}>
               <View style={styles.infoItem}>
                 <MaterialIcons name="speed" size={20} color={isLight ? "#eab308" : "#facc15"} />
-                <Text style={[styles.infoText, isLight && { color: '#111827' }]}>
+                <Text style={[styles.infoText, isLight ? { color: '#111827' } : undefined]}>
                   {location.coords.speed ? Math.round(location.coords.speed * 3.6) : 0} km/h
                 </Text>
               </View>
               <View style={styles.infoItem}>
                 <MaterialIcons name="gps-fixed" size={20} color="#4ade80" />
-                <Text style={[styles.infoText, isLight && { color: '#111827' }]}>
+                <Text style={[styles.infoText, isLight ? { color: '#111827' } : undefined]}>
                   ±{Math.round(location.coords.accuracy || 0)}m
                 </Text>
               </View>
             </View>
-            <Text style={[styles.latLngText, isLight && { color: '#6b7280' }]}>
+            <Text style={[styles.latLngText, isLight ? { color: '#6b7280' } : undefined]}>
               {location.coords.latitude.toFixed(5)}, {location.coords.longitude.toFixed(5)}
             </Text>
           </View>

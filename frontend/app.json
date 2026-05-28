@@ -7,7 +7,6 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "jsEngine": "hermes",
-    "newArchEnabled": false,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -28,7 +27,8 @@
         "backgroundColor": "#000000"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.roadsos.app",
+      "package": "com.aran.app",
+      "googleServicesFile": "./google-services.json",
       "permissions": [
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
