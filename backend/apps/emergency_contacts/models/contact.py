@@ -12,6 +12,7 @@ class EmergencyContact(models.Model):
 
     class Meta:
         db_table = 'emergency_contacts'
+        managed = False # Table already exists in DB
 
     def __str__(self):
         return f"{self.contact_name} ({self.relationship}) - {self.phone_number}"
