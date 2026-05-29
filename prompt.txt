@@ -1,0 +1,43 @@
+Add Text and Voice Notes to SOS History
+This plan outlines the architecture and steps to add text and voice notes to your SOS emergency events. The user will have a text input box and a microphone button on the home screen. When an SOS is triggered, these notes will be saved to the database history, and the voice note URL will be sent to the emergency contacts.
+
+IMPORTANT
+
+User Review Required: Please review the plan below. If you approve, I will begin implementing these changes. Let me know if you want the voice notes stored locally or if you plan to use a cloud service (like AWS S3) in production. For this MVP, I will configure Django to store them on the local server.
+
+Proposed Changes
+Backend (Django API & Database)
+[MODIFY] backend/apps/services/models/sos_event_logs.py
+Add two new columns to the SOSEventLog model:
+text_note = models.TextField(blank=True, null=True)
+voice_note = models.FileField(upload_to='voice_notes/', blank=True, null=True)
+[MODIFY] backend/core/settings.py (or your main settings file)
+Configure MEDIA_URL and MEDIA_ROOT so Django knows how to save and serve uploaded audio files.
+[MODIFY] backend/core/urls.py
+Add a route to serve media files during development so the frontend can download/play the voice notes via URL.
+[MODIFY] backend/apps/services/serializers/event_serializer.py
+Update the serializer to accept and return the new text_note and voice_note fields.
+[NEW] Database Migrations
+Run python manage.py makemigrations and migrate to physically add these two columns to the PostgreSQL database.
+Frontend (React Native Mobile App)
+[MODIFY] frontend/package.json
+Run expo install expo-av to install the official Expo audio recording package.
+[MODIFY] frontend/src/screens/HomeScreen.tsx
+UI Updates:
+Make the existing dummy text input functional, bound to a new textNote state.
+Make the microphone icon functional. Pressing it will start recording audio via expo-av, and pressing it again will stop and store the audioUri.
+Logic Updates:
+Update the SOS trigger functions to upload the audio file using a multipart/form-data request (instead of standard JSON) to the backend.
+Append the textNote and the newly generated voice_note link to the SMS message body before sending it to contacts.
+[MODIFY] frontend/src/store/slices/sosSlice.ts
+Update the logSOSEventToBackend Redux thunk. Instead of sending a simple JSON object, it needs to append the text and audio file to a FormData object.
+[MODIFY] frontend/src/screens/HistoryScreen.tsx (or where History is viewed)
+Add UI to display the text_note if it exists.
+Add a "Play Audio" button that uses expo-av to stream the voice_note_url from the backend if it exists.
+Verification Plan
+Automated/Manual Testing
+Record a 3-second voice note and type "Accident here" into the text box.
+Hit an Emergency Service button (e.g. Police).
+Verify that the Django backend successfully receives the .m4a file and saves it to the database.
+Verify the SMS template populates correctly with the backend's audio URL.
+Check the History screen to confirm both the text and audio playback work perfectly.
