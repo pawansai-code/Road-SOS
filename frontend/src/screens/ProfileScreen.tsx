@@ -23,7 +23,7 @@ import { useTranslation } from 'react-i18next';
 import { useColorScheme } from 'nativewind';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { updateProfile, clearProfile, fetchProfile, UserProfile } from '../store/slices/userSlice';
-import { fetchContacts, addContact, deleteContact } from '../store/slices/contactsSlice';
+import { fetchContacts, addContact, deleteContact, fetchSmsTemplate } from '../store/slices/contactsSlice';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Profile'>;
@@ -155,6 +155,7 @@ export default function ProfileScreen({ navigation }: Props) {
       .unwrap()
       .then(() => {
         setIsDirty(false);
+        dispatch(fetchSmsTemplate());
         Alert.alert('✅ Saved', 'Your profile has been updated successfully.');
       })
       .catch((err: string) => Alert.alert('Save Failed', err));

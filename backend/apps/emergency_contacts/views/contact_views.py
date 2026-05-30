@@ -13,7 +13,7 @@ class EmergencyContactView(APIView):
 
     def get(self, request):
         user = self.get_user(request)
-        contacts = EmergencyContact.objects.filter(user=user).order_by('created_at')
+        contacts = EmergencyContact.objects.filter(user_profile=user).order_by('created_at')
         serializer = EmergencyContactSerializer(contacts, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -21,7 +21,7 @@ class EmergencyContactView(APIView):
         user = self.get_user(request)
         
         # Enforce max 5 contacts limit
-        if EmergencyContact.objects.filter(user=user).count() >= 5:
+        if EmergencyContact.objects.filter(user_profile=user).count() >= 5:
             return Response(
                 {"error": "You can only save up to 5 emergency contacts."}, 
                 status=status.HTTP_400_BAD_REQUEST
@@ -29,7 +29,7 @@ class EmergencyContactView(APIView):
             
         serializer = EmergencyContactSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(user=user)
+            serializer.save(user_profile=user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -40,7 +40,7 @@ class EmergencyContactDetailView(APIView):
 
     def delete(self, request, pk):
         user = self.get_user(request)
-        contact = get_object_or_404(EmergencyContact, pk=pk, user=user)
+        contact = get_object_or_404(EmergencyContact, pk=pk, user_profile=user)
         contact.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 

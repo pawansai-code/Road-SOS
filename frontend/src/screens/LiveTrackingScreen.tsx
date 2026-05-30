@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Platform, Dimensions } from 'react-native';
-import MapView, { Marker, UrlTile } from 'react-native-maps';
+import { WebView } from 'react-native-webview';
 import * as Location from 'expo-location';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -16,7 +16,7 @@ const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO;
 
 export default function LiveTrackingScreen() {
   const navigation = useNavigation();
-  const mapRef = useRef<MapView>(null);
+  const mapRef = useRef<WebView>(null);
   const { t } = useTranslation();
   const { colorScheme } = useColorScheme();
   
@@ -42,12 +42,13 @@ export default function LiveTrackingScreen() {
         setLocation(initialLocation);
         
         if (mapRef.current && initialLocation) {
-          mapRef.current.animateToRegion({
-            latitude: initialLocation.coords.latitude,
-            longitude: initialLocation.coords.longitude,
-            latitudeDelta: LATITUDE_DELTA,
-            longitudeDelta: LONGITUDE_DELTA,
-          }, 1000);
+          mapRef.current.injectJavaScript(`
+            if (window.marker && window.map) {
+              var newLatLng = new L.LatLng(${initialLocation.coords.latitude}, ${initialLocation.coords.longitude});
+              window.marker.setLatLng(newLatLng);
+              window.map.setView(newLatLng, 17);
+            }
+          `);
         }
       } catch (err) {
         console.log("Error getting initial location", err);
@@ -64,14 +65,13 @@ export default function LiveTrackingScreen() {
             setLocation(newLocation);
             
             if (isTracking && mapRef.current) {
-              mapRef.current.animateCamera({
-                center: {
-                  latitude: newLocation.coords.latitude,
-                  longitude: newLocation.coords.longitude,
-                },
-                pitch: 45,
-                heading: newLocation.coords.heading || 0, 
-              });
+              mapRef.current.injectJavaScript(`
+                if (window.marker && window.map) {
+                  var newLatLng = new L.LatLng(${newLocation.coords.latitude}, ${newLocation.coords.longitude});
+                  window.marker.setLatLng(newLatLng);
+                  window.map.setView(newLatLng, window.map.getZoom());
+                }
+              `);
             }
           }
         );
@@ -90,17 +90,80 @@ export default function LiveTrackingScreen() {
   const recenterMap = () => {
     setIsTracking(true);
     if (location && mapRef.current) {
-      mapRef.current.animateCamera({
-        center: {
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-        },
-        zoom: 17,
-        pitch: 45,
-        heading: location.coords.heading || 0,
-      }, { duration: 1000 });
+      mapRef.current.injectJavaScript(`
+        if (window.marker && window.map) {
+          var newLatLng = new L.LatLng(${location.coords.latitude}, ${location.coords.longitude});
+          window.marker.setLatLng(newLatLng);
+          window.map.setView(newLatLng, 17);
+        }
+      `);
     }
   };
+
+  
+  const getLeafletHTML = (lat: number, lng: number) => `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body { padding: 0; margin: 0; }
+        html, body, #map { height: 100%; width: 100%; }
+        .leaflet-control-attribution { display: none; }
+        
+        /* Custom Marker CSS */
+        .custom-marker {
+            width: 32px;
+            height: 32px;
+            background-color: rgba(239, 68, 68, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid rgba(239, 68, 68, 0.5);
+            animation: pulse 2s infinite;
+        }
+        .custom-marker-core {
+            width: 12px;
+            height: 12px;
+            background-color: #ef4444;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 0 4px rgba(0,0,0,0.5);
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script>
+        window.map = L.map('map', {zoomControl: false}).setView([${lat}, ${lng}], 17);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19
+        }).addTo(window.map);
+        
+        var customIcon = L.divIcon({
+            className: 'custom-div-icon',
+            html: "<div class='custom-marker'><div class='custom-marker-core'></div></div>",
+            iconSize: [32, 32],
+            iconAnchor: [16, 16]
+        });
+        
+        window.marker = L.marker([${lat}, ${lng}], {icon: customIcon}).addTo(window.map);
+        
+        window.map.on('dragstart', function() {
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'DRAG' }));
+        });
+    </script>
+</body>
+</html>
+  `;
 
   const isLight = colorScheme === 'light';
 
@@ -130,42 +193,22 @@ export default function LiveTrackingScreen() {
         </View>
       ) : (
         <View style={styles.mapContainer}>
-          <MapView
+          <WebView
             ref={mapRef}
             style={styles.map}
-            mapType="none"
-            showsUserLocation={false} 
-            showsMyLocationButton={false}
-            showsCompass={false}
-            onPanDrag={() => setIsTracking(false)} 
-            initialRegion={{
-              latitude: location.coords.latitude,
-              longitude: location.coords.longitude,
-              latitudeDelta: LATITUDE_DELTA,
-              longitudeDelta: LONGITUDE_DELTA,
+            source={{ html: getLeafletHTML(location.coords.latitude, location.coords.longitude) }}
+            onMessage={(event) => {
+              try {
+                const data = JSON.parse(event.nativeEvent.data);
+                if (data.type === 'DRAG') setIsTracking(false);
+              } catch(e) {}
             }}
-          >
-            <UrlTile
-              urlTemplate="https://a.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              maximumZ={19}
-              flipY={false}
-            />
-            <Marker
-              coordinate={{
-                latitude: location.coords.latitude,
-                longitude: location.coords.longitude,
-              }}
-              title={t("you")}
-              description={t("liveLocation")}
-            >
-              {/* Custom Marker UI */}
-              <View style={styles.markerContainer}>
-                <View style={styles.markerRing}>
-                  <View style={styles.markerCore} />
-                </View>
-              </View>
-            </Marker>
-          </MapView>
+            scrollEnabled={false}
+            bounces={false}
+            showsHorizontalScrollIndicator={false}
+            showsVerticalScrollIndicator={false}
+            originWhitelist={['*']}
+          />
 
           {/* Recenter Button Overlay */}
           {!isTracking && (
