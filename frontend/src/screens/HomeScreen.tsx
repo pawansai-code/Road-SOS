@@ -834,22 +834,7 @@ export default function HomeScreen() {
             ))}
         </View>
 
-        {/* Text Input */}
-        <View className="flex-row items-center bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl px-4 py-2 mt-2 mb-4">
-          <TextInput
-            className="flex-1 text-gray-900 dark:text-white h-10"
-            style={{ color: "white" }}
-            placeholder={t("brieflyDescribe")}
-            placeholderTextColor="#6b7280"
-          />
-          <TouchableOpacity>
-            <MaterialIcons
-              name="mic"
-              size={24}
-              color={colorScheme === "dark" ? "#facc15" : "#eab308"}
-            />
-          </TouchableOpacity>
-        </View>
+
 
         {/* Location Banner */}
         <View
