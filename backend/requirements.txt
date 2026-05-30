@@ -1,2 +1,4 @@
 -r requirements/development.txt
 gunicorn
+dj-database-url
+whitenoise
