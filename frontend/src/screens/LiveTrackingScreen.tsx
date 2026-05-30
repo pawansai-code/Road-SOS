@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Platform, Dimensions } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE, PROVIDER_DEFAULT } from 'react-native-maps';
+import MapView, { Marker, UrlTile } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -133,11 +133,10 @@ export default function LiveTrackingScreen() {
           <MapView
             ref={mapRef}
             style={styles.map}
-            provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : PROVIDER_DEFAULT}
+            mapType="none"
             showsUserLocation={false} 
             showsMyLocationButton={false}
             showsCompass={false}
-            mapType="standard"
             onPanDrag={() => setIsTracking(false)} 
             initialRegion={{
               latitude: location.coords.latitude,
@@ -146,6 +145,11 @@ export default function LiveTrackingScreen() {
               longitudeDelta: LONGITUDE_DELTA,
             }}
           >
+            <UrlTile
+              urlTemplate="https://a.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              maximumZ={19}
+              flipY={false}
+            />
             <Marker
               coordinate={{
                 latitude: location.coords.latitude,

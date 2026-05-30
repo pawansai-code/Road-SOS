@@ -27,6 +27,7 @@ import {
 } from "../store/slices/sosSlice";
 import { BASE_URL } from "../config";
 import { fetchContacts, fetchSmsTemplate } from "../store/slices/contactsSlice";
+import { logout } from "../store/slices/authSlice";
 import { setHasSeenTutorial } from "../store/slices/userSlice";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -767,43 +768,43 @@ export default function HomeScreen() {
             <EmergencyService
               icon="local-police"
               label={t("police")}
-              phoneNumber="9445401181"
+              phoneNumber="100"
             />
             <EmergencyService
               icon="local-fire-department"
               label={t("fire")}
-              phoneNumber="8124762504"
+              phoneNumber="101"
             />
             <EmergencyService
               icon="local-hospital"
               label={t("medical")}
-              phoneNumber="8838343939"
+              phoneNumber="108"
             />
             <EmergencyService
               icon="storm"
               label={t("disaster")}
-              phoneNumber="9043091519"
+              phoneNumber="1078"
             />
 
             <EmergencyService
               icon="woman"
               label={t("woman")}
-              phoneNumber="9080269331"
+              phoneNumber="1091"
             />
             <EmergencyService
               icon="child-care"
               label={t("child")}
-              phoneNumber="9677699624"
+              phoneNumber="1098"
             />
             <EmergencyService
               icon="elderly"
               label={t("elderly")}
-              phoneNumber="1111111111"
+              phoneNumber="14567"
             />
             <EmergencyService
-              icon="train"
-              label={t("railway")}
-              phoneNumber="9360067772"
+              icon="traffic"
+              label={t("traffic")}
+              phoneNumber="103"
             />
           </CopilotView>
         </CopilotStep>
@@ -1048,6 +1049,7 @@ export default function HomeScreen() {
                 <TouchableOpacity
                   activeOpacity={0.7}
                   className="flex-row items-center py-3.5 px-4 rounded-2xl mb-1.5 active:bg-red-950/20 mt-4"
+                  onPress={() => dispatch(logout())}
                 >
                   <MaterialIcons name="logout" size={24} color="#f87171" />
                   <Text className="text-red-400 font-extrabold text-sm ml-4">
