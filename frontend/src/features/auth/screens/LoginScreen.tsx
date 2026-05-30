@@ -13,7 +13,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, sendPasswordResetEmail, GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { auth } from '../services/firebaseAuth';
 import { useAppDispatch } from '../../../store/hooks';
 import { setAuthLoading, setAuthSuccess, setAuthError } from '../../../store/slices/authSlice';
@@ -29,8 +30,13 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [devError, setDevError] = useState<string | null>(null);
 
+  const [resetEmail, setResetEmail] = useState('');
+  const [showForgotModal, setShowForgotModal] = useState(false);
+
   useEffect(() => {
-    // No native Google config needed for JS SDK
+    GoogleSignin.configure({
+      webClientId: '476256496723-tqtfpv8u8h121gva2i4odbcu0aesfqmp.apps.googleusercontent.com',
+    });
   }, []);
 
   const handleLogin = async () => {
@@ -57,11 +63,44 @@ export default function LoginScreen() {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!resetEmail) {
+      Alert.alert('Error', 'Please enter your email address.');
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, resetEmail);
+      Alert.alert('Success', 'Password reset email sent. Please check your inbox.');
+      setShowForgotModal(false);
+      setResetEmail('');
+    } catch (error: any) {
+      Alert.alert('Error', error.message);
+    }
+  };
+
   const handleGoogleSignIn = async () => {
-    Alert.alert(
-      'Google Sign-In Disabled',
-      'Google Sign-in requires compiling a native app. While testing in Expo Go, please use Email/Password authentication instead.'
-    );
+    try {
+      setLoading(true);
+      setDevError(null);
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+      
+      if (!userInfo.data?.idToken) {
+        throw new Error("No ID token found!");
+      }
+
+      const googleCredential = GoogleAuthProvider.credential(userInfo.data.idToken);
+      const userCredential = await signInWithCredential(auth, googleCredential);
+      
+      dispatch(setAuthSuccess(userCredential.user.uid));
+    } catch (error: any) {
+      console.log('Google Sign-In Error:', error);
+      if (error.code !== 'SIGN_IN_CANCELLED') {
+        setDevError(error.message || 'An error occurred during Google Sign-In.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -115,7 +154,7 @@ export default function LoginScreen() {
               value={password}
               onChangeText={setPassword}
             />
-            <TouchableOpacity className="mt-3 items-end">
+            <TouchableOpacity className="mt-3 items-end" onPress={() => setShowForgotModal(true)}>
               <Text className="text-yellow-400 text-sm font-semibold">Forgot Password?</Text>
             </TouchableOpacity>
           </View>
@@ -158,6 +197,41 @@ export default function LoginScreen() {
             <Text className="text-yellow-400 text-base font-bold">Sign Up</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Forgot Password Modal */}
+        {showForgotModal && (
+          <View className="absolute inset-0 z-50 bg-black/80 justify-center items-center px-6">
+            <View className="bg-[#0f172a] w-full rounded-2xl p-6 border border-gray-800 shadow-2xl">
+              <Text className="text-white text-xl font-bold mb-2">Reset Password</Text>
+              <Text className="text-gray-400 text-sm mb-6">
+                Enter your email address and we'll send you a link to reset your password.
+              </Text>
+              <TextInput
+                className="bg-black text-white rounded-xl px-4 py-3 text-base border border-gray-700 mb-6"
+                placeholder="Email address"
+                placeholderTextColor="#64748b"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={resetEmail}
+                onChangeText={setResetEmail}
+              />
+              <View className="flex-row justify-end space-x-4">
+                <TouchableOpacity 
+                  onPress={() => setShowForgotModal(false)}
+                  className="px-4 py-2"
+                >
+                  <Text className="text-gray-400 font-semibold">Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  onPress={handleForgotPassword}
+                  className="bg-yellow-400 px-6 py-2 rounded-lg"
+                >
+                  <Text className="text-black font-bold">Send Link</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        )}
 
       </KeyboardAvoidingView>
     </SafeAreaView>
