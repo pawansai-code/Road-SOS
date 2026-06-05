@@ -106,8 +106,7 @@ python manage.py runserver 0.0.0.0:8000
 
   ##Homesscreen
 
-  <img width="632" height="1280" alt="image" src="https://github.com/user-attachments/assets/ae8523b8-19f9-4113-bf37-4904c9de99da" />
-
+<img width="300" height="600" alt="image" src="https://github.com/user-attachments/assets/ae8523b8-19f9-4113-bf37-4904c9de99da" />
 
 ## 🤝 Contributors
 
