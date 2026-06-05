@@ -102,6 +102,13 @@ python manage.py runserver 0.0.0.0:8000
 
 *For testing purposes, requests expect a header of `X-Firebase-Uid: dummy_user_123`.*
 
+## ouput screens
+
+  ##Homesscreen
+
+  <img width="632" height="1280" alt="image" src="https://github.com/user-attachments/assets/ae8523b8-19f9-4113-bf37-4904c9de99da" />
+
+
 ## 🤝 Contributors
 
 This project is built and maintained by our incredible team:
