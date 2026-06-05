@@ -104,10 +104,19 @@ python manage.py runserver 0.0.0.0:8000
 
 ## ouput screens
 
-  ##Homesscreen
+1. Homesscreen
 
 <img width="300" height="600" alt="image" src="https://github.com/user-attachments/assets/ae8523b8-19f9-4113-bf37-4904c9de99da" />
 
+2. Profile screen
+
+<img width="300" height="600" alt="image" src="https://github.com/user-attachments/assets/7545d370-cef8-4f95-96f8-04fb47f002b2" />
+
+3. Map screen
+
+   <img width="300" height="600" alt="image" src="https://github.com/user-attachments/assets/2cdcca2c-4361-4f70-aff1-44cc5e8b14db" />
+
+4. 
 ## 🤝 Contributors
 
 This project is built and maintained by our incredible team:
