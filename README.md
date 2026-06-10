@@ -31,7 +31,7 @@ In critical situations (road accidents, sudden medical crises), every second cou
 
 ## ✨ Key Features
 
-- **Single-Tap SOS Trigger:** Immediately alert relevant authorities (Police, Fire, Medical) with real-time GPS coordinates.
+- **Single-Tap SOS Trigger:** Immediately alert relevant authorities (Police, Fire, Medical, disaster..) with real-time GPS coordinates.
 - **Automated SMS Dispatch:** Auto-generates and sends text messages to up to 5 stored emergency contacts with live tracking links.
 - **Digital Medical Profile:** Stores crucial data (Blood Group, Allergies, Medical Notes) for instant access by first responders.
 - **Live Location Tracking:** Continuous GPS polling to ensure responders are heading to your exact, real-time location.
