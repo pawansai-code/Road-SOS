@@ -1,6 +1,6 @@
 # ROAD SOS - ERROR LOG & TROUBLESHOOTING GUIDE
 
-## 📱 Frontend & UI Issues
+## 📱 Frontend & UI IssueS
 
 ### 1. SOS Button Overflow & Layout Breakage (Tamil/Malayalam)
 * **Symptoms:** When switching the application language to Tamil or Malayalam, the text bleeds out of the circular SOS button and warps the surrounding UI.
